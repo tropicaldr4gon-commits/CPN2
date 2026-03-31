@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thành - Daily Command Center</title>
+    <style>
+        :root {
+            --bg-color: #0a0a0a;
+            --panel-bg: #141414;
+            --neon-blue: #00f3ff;
+            --neon-green: #39ff14;
+            --neon-orange: #ff9d00;
+            --text-main: #e0e0e0;
+            --text-dim: #777;
+        }
+
+        * { box-sizing: border-box; font-family: 'Courier New', Courier, monospace; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0; padding: 20px;
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        .header-container {
+            text-align: center; margin-bottom: 30px; width: 100%; max-width: 600px;
+        }
+
+        h1 {
+            color: #fff; text-shadow: 0 0 10px #fff;
+            letter-spacing: 3px; margin-bottom: 5px; text-transform: uppercase;
+        }
+
+        .date-nav {
+            display: flex; justify-content: space-between; align-items: center;
+            background: var(--panel-bg); padding: 15px; border-radius: 8px;
+            border: 1px solid #333; margin-top: 20px;
+        }
+
+        .date-nav button {
+            background: transparent; color: #fff; border: 1px solid #555;
+            padding: 8px 15px; cursor: pointer; border-radius: 4px;
+            font-weight: bold; transition: 0.3s;
+        }
+
+        .date-nav button:hover { background: #333; }
+        #current-date-display { font-size: 1.2rem; font-weight: bold; color: #fff; text-shadow: 0 0 5px #fff; }
+
+        .module {
+            background: var(--panel-bg); width: 100%; max-width: 600px;
+            margin-bottom: 25px; padding: 20px; border-radius: 10px;
+            border-left: 5px solid; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        .module.blender { border-color: var(--neon-blue); box-shadow: inset 0 0 10px rgba(0, 243, 255, 0.1); }
+        .module.english { border-color: var(--neon-green); box-shadow: inset 0 0 10px rgba(57, 255, 20, 0.1); }
+        .module.gym { border-color: var(--neon-orange); box-shadow: inset 0 0 10px rgba(255, 157, 0, 0.1); }
+
+        .module-header {
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 15px;
+        }
+
+        .module-title { font-size: 1.2rem; font-weight: bold; letter-spacing: 1px; }
+        .blender .module-title { color: var(--neon-blue); text-shadow: 0 0 8px var(--neon-blue); }
+        .english .module-title { color: var(--neon-green); text-shadow: 0 0 8px var(--neon-green); }
+        .gym .module-title { color: var(--neon-orange); text-shadow: 0 0 8px var(--neon-orange); }
+
+        .progress-info { font-size: 0.85rem; color: #aaa; text-align: right; }
+
+        .topic-box {
+            background: rgba(255,255,255,0.05); padding: 10px; border-radius: 5px;
+            margin-bottom: 15px; font-size: 0.9rem; font-style: italic; color: #ccc;
+        }
+
+        .task-list { display: flex; flex-direction: column; gap: 12px; }
+
+        .task-item {
+            display: flex; align-items: flex-start; gap: 12px;
+            background: rgba(0,0,0,0.4); padding: 15px; border-radius: 6px;
+            border: 1px solid #222; cursor: pointer; transition: 0.2s;
+        }
+
+        .task-item:hover { background: rgba(255,255,255,0.05); }
+
+        .task-checkbox {
+            appearance: none; width: 22px; height: 22px; border: 2px solid #555;
+            border-radius: 4px; cursor: pointer; flex-shrink: 0; position: relative;
+            margin-top: 2px; transition: 0.3s; outline: none;
+        }
+
+        .blender .task-checkbox:checked { background: var(--neon-blue); border-color: var(--neon-blue); box-shadow: 0 0 10px var(--neon-blue); }
+        .english .task-checkbox:checked { background: var(--neon-green); border-color: var(--neon-green); box-shadow: 0 0 10px var(--neon-green); }
+        .gym .task-checkbox:checked { background: var(--neon-orange); border-color: var(--neon-orange); box-shadow: 0 0 10px var(--neon-orange); }
+
+        .task-checkbox:checked::after {
+            content: '✔'; position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%); color: #000; font-size: 14px; font-weight: bold;
+        }
+
+        .task-content { flex-grow: 1; }
+        .task-title { font-weight: bold; margin-bottom: 4px; font-size: 1rem; color: #fff; }
+        .task-desc { font-size: 0.85rem; color: var(--text-dim); line-height: 1.4; }
+
+        .task-item.completed .task-title { color: #555; text-decoration: line-through; }
+        .task-item.completed .task-desc { color: #444; text-decoration: line-through; }
+        
+        #rest-day-msg { text-align: center; color: var(--neon-orange); font-style: italic; padding: 20px; }
+
+    </style>
+</head>
+<body>
+
+    <div class="header-container">
+        <h1>COMMAND CENTER</h1>
+        <div style="color: var(--text-dim); font-size: 0.9rem;">Hệ thống theo dõi tiến độ tự động</div>
+        
+        <div class="date-nav">
+            <button onclick="changeDate(-1)">◄ PREV</button>
+            <div id="current-date-display">...</div>
+            <button onclick="changeDate(1)">NEXT ►</button>
+        </div>
+        <button onclick="goToToday()" style="margin-top: 10px; background: #222; color: #fff; border: 1px solid #444; padding: 5px 15px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">VỀ HÔM NAY</button>
+    </div>
+
+    <div class="module blender" id="mod-blender">
+        <div class="module-header">
+            <div class="module-title">🖥️ BLENDER 3D</div>
+            <div class="progress-info" id="bl-prog">Tháng 1 | Tuần 1 | Ngày 1</div>
+        </div>
+        <div class="topic-box" id="bl-topic">Chủ đề: ...</div>
+        <div class="task-list" id="bl-tasks"></div>
+    </div>
+
+    <div class="module english" id="mod-english">
+        <div class="module-header">
+            <div class="module-title">🎧 ENGLISH COMBAT</div>
+            <div class="progress-info" id="en-prog">Tháng 1 | Tuần 1 | Ngày 1</div>
+        </div>
+        <div class="topic-box" id="en-topic">Chủ đề: ...</div>
+        <div class="task-list" id="en-tasks"></div>
+    </div>
+
+    <div class="module gym" id="mod-gym">
+        <div class="module-header">
+            <div class="module-title">💪 GYM RECOVERY</div>
+            <div class="progress-info" id="gy-prog">Tháng 1 | Tuần 1 | Buổi 1</div>
+        </div>
+        <div class="topic-box" id="gy-topic">Chủ đề: ...</div>
+        <div class="task-list" id="gy-tasks"></div>
+    </div>
+
+<script>
+    // --- DỮ LIỆU GỐC ---
+    const data_blender = [
+        { m: 'MONTH 1: INITIALIZATION', t: ['Master 5 shortcuts (G,R,S,E,I)', 'Basic object modeling', 'Modifiers (Mirror/Array)', 'First image render'] },
+        { m: 'MONTH 2: DONUT CAMPAIGN', t: ['Donut Modeling & Sculpting', 'Master Shader Editor', 'Create sprinkles (Particle)', 'Animation & Video Export'] },
+        { m: 'MONTH 3: PORT ASSETS', t: ['Model Container', 'Basic RTG Crane framework', 'Rusted iron material (Texture)', 'HDRI Environment Setup'] },
+        { m: 'MONTH 4: VINFAST VF5', t: ['VF 5 Car Blocking', 'Wheel details, logo', 'Reflective car paint material', 'Set Camera & Car Animation'] },
+        { m: 'MONTH 5: ENVIRONMENT', t: ['Create orchard terrain', 'Geometry Nodes: Grass, leaves', 'Watering material', 'Fog & lighting effects'] },
+        { m: 'MONTH 6: CINEMATIC LIGHTING', t: ['Dramatic lighting', 'Smoke & fire VFX', 'Advanced Shading', 'Optimize Cycles vs Eevee'] },
+        { m: 'MONTH 7: CHARACTER DESIGN', t: ['Assassin Modeling', 'Create expressions (Shape Keys)', 'Clothing (Cloth Sim)', 'Mesh optimization (Retopology)'] },
+        { m: 'MONTH 8: RIGGING', t: ['Basic bone attachment', 'Weight Painting', 'IK/FK Control Panel', 'Weapon Rigging'] },
+        { m: 'MONTH 9: ANIMATION', t: ['12 Principles of Animation', 'Walk cycle animation', 'Combat action', 'Lip-sync (mouth matching)'] },
+        { m: 'MONTH 10: PRE-PRODUCTION', t: ['Write 30s script', 'Draw Storyboard on S23', 'Drafting (Blocking)', 'Recording & selecting music'] },
+        { m: 'MONTH 11: PRODUCTION', t: ['Finalize animation', 'Add muzzle flash effects', 'Fix clipping issues', 'Render full project'] },
+        { m: 'MONTH 12: POST-PRODUCTION', t: ['Editing (Blender VSE)', 'Color Grading', 'Voiceover & SFX', 'EXPORT FILM & SHARE'] }
+    ];
+
+    const data_english = [
+        { m: 'MONTH 1: SENSES', t: ['20 Vowels (IPA) + Pronouns', '24 Consonants (IPA) + Present Simple', 'Linking sounds + Continuous', 'Wh- questions formulation'] },
+        { m: 'MONTH 2: CONSONANTS', t: ['Stop consonants (/p, b, t, d, k, g/)', 'Fricative consonants (/s, z, h, l, m/)', 'Complex consonants (/th, sh, ch/)', 'Review 24 consonants & 150 words'] },
+        { m: 'MONTH 3: TIMELINE', t: ['Basic linking & Past To-be', 'Past Simple (Adding -ed)', 'Future (Will, Be going to)', 'Summarize 3 time milestones'] },
+        { m: 'MONTH 4: OBJECTS', t: ['Relative clause "Who"', 'Relative clause "Which/That"', 'Relative clause "Whose"', 'Write daily descriptive paragraph'] },
+        { m: 'MONTH 5: PASSIVE', t: ['Present Simple Passive', 'Past Simple Passive', 'Modal Verb Passive', 'Identify passive in news'] },
+        { m: 'MONTH 6: LOGIC', t: ['Conjunctions of reason (Because, So)', 'Conjunctions of contrast (Although)', 'Conjunctions of purpose, condition', 'Listen to Podcast with Eng subs'] },
+        { m: 'MONTH 7: SUBJUNCTIVE', t: ['Conditionals Type 0 & 1', 'Conditionals Type 2 & Idioms', 'Conditionals Type 3', 'Comprehensive review of If & Unless'] },
+        { m: 'MONTH 8: ACTION', t: ['Phrasal verbs with Get', 'Phrasal verbs with Take', 'Phrasal verbs Look, Go, Keep', 'Distinguish literal/figurative meaning'] },
+        { m: 'MONTH 9: FREEDOM', t: ['Watch sitcom without subs', 'Listen to Podcast without transcript', 'Watch TedTalks without subtitles', 'Record 2-minute English video'] },
+        { m: 'MONTH 10: EXPRESSION', t: ['Subjunctive "Wish"', 'Subjunctive "Suggest that"', 'Inversion "Never"', 'Inversion "Not only"'] },
+        { m: 'MONTH 11: SPEED', t: ['British Accent (BBC)', 'Australian & Indian Accents', 'Listen to YouTube at 1.25x / 1.5x', 'Listen to Podcast with background noise'] },
+        { m: 'MONTH 12: FINISH LINE', t: ['Review 1000 core vocabulary words', 'Write short English script', 'Self-debate a topic', '5-10 minute presentation'] }
+    ];
+
+    const data_gym = [
+        { m: 'MONTH 1: ADAPTATION', g: 'Acclimate to 40kg weight and proper form.' },
+        { m: 'MONTH 2: ENDURANCE', g: 'Increase reps and control breathing.' },
+        { m: 'MONTH 3: STRENGTH', g: 'Explosive power with Compound exercises (dumbbells/pull-ups).' },
+        { m: 'MONTH 4: BACK & LATS', g: 'Prioritize back thickness with Pull-ups and Rows.' },
+        { m: 'MONTH 5: CHEST', g: 'Floor Press and Push-up variations for definition.' },
+        { m: 'MONTH 6: LEGS', g: 'Push limits with Squats and Lunges.' },
+        { m: 'MONTH 7: SHOULDERS', g: 'Overhead press and Lateral Raises.' },
+        { m: 'MONTH 8: CORE', g: 'Planks and Leg Raises to protect the spine.' },
+        { m: 'MONTH 9: HYPERTROPHY', g: 'Slow eccentric (Tempo 3-1-1) to tear muscle fibers.' },
+        { m: 'MONTH 10: RESISTANCE BANDS', g: 'Integrate resistance bands for continuous tension.' },
+        { m: 'MONTH 11: DEFINITION', g: 'Focus on small muscle groups and striations.' },
+        { m: 'MONTH 12: PEAK', g: 'Maintain mass and test overall strength limits.' }
+    ];
+
+    // --- HỆ THỐNG NGÀY THÁNG ---
+    const START_DATE = new Date('2026-04-01T00:00:00');
+    let viewDate = new Date(); // Khởi tạo ngày xem là hôm nay
+
+    function formatDate(d) {
+        return d.toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' });
+    }
+
+    function getDateString(d) {
+        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+
+    function getDaysDiff(targetDate) {
+        // Xóa giờ phút giây để tính tròn ngày
+        const start = new Date(START_DATE.getFullYear(), START_DATE.getMonth(), START_DATE.getDate());
+        const current = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+        return Math.floor((current - start) / (1000 * 60 * 60 * 24));
+    }
+
+    function changeDate(offset) {
+        viewDate.setDate(viewDate.getDate() + offset);
+        renderApp();
+    }
+
+    function goToToday() {
+        viewDate = new Date();
+        renderApp();
+    }
+
+    // --- RENDER GIAO DIỆN ---
+    function renderApp() {
+        document.getElementById('current-date-display').innerText = formatDate(viewDate);
+        const diff = getDaysDiff(viewDate);
+        const dateKey = getDateString(viewDate);
+
+        if (diff < 0) {
+            document.getElementById('mod-blender').innerHTML = `<h3 style="text-align:center; color: var(--text-dim);">Chưa tới ngày bắt đầu chiến dịch (01/04/2026)</h3>`;
+            document.getElementById('mod-english').style.display = 'none';
+            document.getElementById('mod-gym').style.display = 'none';
+            return;
+        } else {
+            document.getElementById('mod-blender').innerHTML = getModuleTemplate('blender', '🖥️ BLENDER 3D', 'bl-prog', 'bl-topic', 'bl-tasks');
+            document.getElementById('mod-english').innerHTML = getModuleTemplate('english', '🎧 ENGLISH COMBAT', 'en-prog', 'en-topic', 'en-tasks');
+            document.getElementById('mod-gym').innerHTML = getModuleTemplate('gym', '💪 GYM RECOVERY', 'gy-prog', 'gy-topic', 'gy-tasks');
+            document.getElementById('mod-english').style.display = 'block';
+            document.getElementById('mod-gym').style.display = 'block';
+        }
+
+        renderBlender(diff, dateKey);
+        renderEnglish(diff, dateKey);
+        renderGym(diff, dateKey);
+    }
+
+    function getModuleTemplate(modClass, title, progId, topicId, tasksId) {
+        return `
+            <div class="module-header">
+                <div class="module-title">${title}</div>
+                <div class="progress-info" id="${progId}"></div>
+            </div>
+            <div class="topic-box" id="${topicId}"></div>
+            <div class="task-list" id="${tasksId}"></div>
+        `;
+    }
+
+    function toggleTask(id, dateKey) {
+        const checkbox = document.getElementById(id);
+        const isChecked = checkbox.checked;
+        localStorage.setItem(`chk_${dateKey}_${id}`, isChecked);
+        
+        const label = checkbox.closest('.task-item');
+        if(isChecked) label.classList.add('completed');
+        else label.classList.remove('completed');
+    }
+
+    function getTaskHTML(id, title, desc, dateKey, moduleClass) {
+        const isChecked = localStorage.getItem(`chk_${dateKey}_${id}`) === 'true';
+        return `
+            <label class="task-item ${isChecked ? 'completed' : ''}">
+                <input type="checkbox" class="task-checkbox" id="${id}" onchange="toggleTask('${id}', '${dateKey}')" ${isChecked ? 'checked' : ''}>
+                <div class="task-content">
+                    <div class="task-title">${title}</div>
+                    <div class="task-desc">${desc}</div>
+                </div>
+            </label>
+        `;
+    }
+
+    // --- LOGIC BLENDER ---
+    function renderBlender(diff, dateKey) {
+        let bl_m_idx = Math.floor(diff / 28) % 12;
+        let bl_w_idx = Math.floor((diff % 28) / 7);
+        let bl_d = (diff % 7) + 1;
+
+        let curM = data_blender[bl_m_idx];
+        let curT = curM.t[bl_w_idx];
+
+        document.getElementById('bl-prog').innerText = `${curM.m.split(':')[0]} | TUẦN ${bl_w_idx + 1} | NGÀY ${bl_d}/7`;
+        document.getElementById('bl-topic').innerText = `Mục tiêu tuần: ${curT}`;
+
+        let tasksHTML = "";
+        if(bl_d <= 4) {
+            tasksHTML += getTaskHTML('bl_1', '🎧 S23 RESEARCH', `Xem video hướng dẫn về: ${curT}`, dateKey);
+            tasksHTML += getTaskHTML('bl_2', '✍️ NOTE-TAKING', 'Ghi chú lại các phím tắt và thông số quan trọng.', dateKey);
+        } else {
+            tasksHTML += getTaskHTML('bl_1', '💻 PC PRACTICE', `Thực hành trên máy tính: ${curT}`, dateKey);
+            tasksHTML += getTaskHTML('bl_2', '🎨 PERSONAL PROJECT', 'Áp dụng kỹ thuật vào project Cinematic Sát Thủ.', dateKey);
+        }
+        document.getElementById('bl-tasks').innerHTML = tasksHTML;
+    }
+
+    // --- LOGIC ENGLISH ---
+    function renderEnglish(diff, dateKey) {
+        let en_m_idx = Math.floor(diff / 28) % 12;
+        let en_w_idx = Math.floor((diff % 28) / 7);
+        let en_d = (diff % 7) + 1;
+
+        let curM = data_english[en_m_idx];
+        let curT = curM.t[en_w_idx];
+        let topic = curT.includes('+') ? curT.split('+')[0].trim() : (curT.includes(':') ? curT.split(':')[1].trim() : curT);
+
+        document.getElementById('en-prog').innerText = `${curM.m.split(':')[0]} | TUẦN ${en_w_idx + 1} | NGÀY ${en_d}/7`;
+        document.getElementById('en-topic').innerText = `Trọng tâm: ${topic}`;
+
+        let tasksHTML = "";
+        tasksHTML += getTaskHTML('en_1', '🎧 PASSIVE LISTENING (30M)', `Nghe thụ động chú ý ngữ điệu: ${topic}`, dateKey);
+        
+        if(en_d <= 5) {
+            tasksHTML += getTaskHTML('en_2', '📖 ACTIVE LEARNING (20M)', 'Học lý thuyết và nạp 5-7 từ vựng mới.', dateKey);
+            tasksHTML += getTaskHTML('en_3', '✍️ OUTPUT PRACTICE (10M)', 'Viết 3 câu tiếng Anh áp dụng kiến thức vừa học.', dateKey);
+        } else if(en_d === 6) {
+            tasksHTML += getTaskHTML('en_2', '🔄 GENERAL REVIEW (20M)', 'Ôn tập toàn bộ từ vựng trong tuần.', dateKey);
+            tasksHTML += getTaskHTML('en_3', '🧹 ORGANIZE NOTES (10M)', 'Đọc lại ghi chú trên S23 Ultra.', dateKey);
+        } else {
+            tasksHTML += getTaskHTML('en_2', '🎯 TESTING STATION (20M)', 'Làm bài test tự đánh giá cuối tuần.', dateKey);
+            tasksHTML += getTaskHTML('en_3', '🎉 BRAIN RELAXATION (10M)', 'Xem video tiếng Anh giải trí KHÔNG vietsub.', dateKey);
+        }
+        document.getElementById('en-tasks').innerHTML = tasksHTML;
+    }
+
+    // --- LOGIC GYM ---
+    function renderGym(diff, dateKey) {
+        let dow = viewDate.getDay(); // 0: Sun, 1: Mon, ... 6: Sat
+        
+        // Chỉ tập vào Thứ 2 (1), Thứ 4 (3), Thứ 6 (5)
+        if (dow !== 1 && dow !== 3 && dow !== 5) {
+            document.getElementById('mod-gym').innerHTML += `<div id="rest-day-msg">Hôm nay là ngày Rest Day. Khôi phục cơ bắp và nạp năng lượng!</div>`;
+            return;
+        }
+
+        let gy_d = dow === 1 ? 1 : (dow === 3 ? 2 : 3);
+        let gy_w_idx = Math.floor(diff / 7) % 4;
+        let gy_m_idx = Math.floor(diff / 28) % 12;
+
+        let curM = data_gym[gy_m_idx];
+
+        document.getElementById('gy-prog').innerText = `${curM.m.split(':')[0]} | TUẦN ${gy_w_idx + 1} | BUỔI ${gy_d}/3`;
+        document.getElementById('gy-topic').innerText = `Mục tiêu: ${curM.g}`;
+
+        let tArr = (gy_d === 1) 
+            ? [{t:"GOBLET SQUAT (40KG)", d:"Tạ Dumbbells. 3 set x 10-12 reps"}, {t:"PULL-UPS", d:"Kéo xà Max reps. 3 set."}, {t:"DUMBBELL FLOOR PRESS", d:"Tạ 40kg. 3 set x 10 reps."}] 
+            : [{t:(gy_d === 2 ? "BULGARIAN SPLIT SQUAT" : "WALKING LUNGES"), d:"Bodyweight. Bơm máu vào cơ đùi."}, {t:(gy_d === 2 ? "DIAMOND PUSH-UPS" : "PIKE PUSH-UPS"), d:"Tập trung cơ Tay sau / Vai."}, {t:(gy_d === 2 ? "PLANK" : "LEG RAISES"), d:"Siết chặt cơ core, bảo vệ cột sống."}];
+
+        let tasksHTML = "";
+        tArr.forEach((t, i) => {
+            tasksHTML += getTaskHTML(`gy_${i}`, t.t, t.d, dateKey);
+        });
+        
+        document.getElementById('gy-tasks').innerHTML = tasksHTML;
+    }
+
+    // Khởi chạy khi load trang
+    window.onload = renderApp;
+
+</script>
+</body>
+</html>
