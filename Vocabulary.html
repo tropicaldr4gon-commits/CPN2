@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>100 Từ Vựng Blender & Tiếng Anh RTG</title>
+    <style>
+        :root {
+            --primary: #0056b3;
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-main: #333333;
+            --accent: #d9534f;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            padding: 20px;
+            margin: 0;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+        h1 { text-align: center; color: var(--primary); margin-bottom: 5px; }
+        .progress {
+            text-align: center; margin-bottom: 25px; font-weight: bold;
+            color: #666; font-size: 1.1em; background: #e9ecef;
+            padding: 10px; border-radius: 8px;
+        }
+        .word-card {
+            border: 2px solid #e0e0e0; border-radius: 10px; padding: 20px;
+            margin-bottom: 20px; transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .word-card:hover {
+            transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border-color: var(--primary);
+        }
+        .word-title {
+            font-size: 1.8em; font-weight: bold; color: var(--accent);
+            display: flex; align-items: center; justify-content: space-between;
+            border-bottom: 1px dashed #ccc; padding-bottom: 10px; margin-bottom: 10px;
+        }
+        .word-type { font-size: 0.6em; color: #666; font-style: italic; vertical-align: middle; }
+        .word-meaning { font-size: 1.2em; color: var(--primary); font-weight: bold; margin-bottom: 12px; }
+        .word-example { background-color: #f8f9fa; padding: 15px; border-left: 5px solid var(--primary); border-radius: 4px; }
+        .en-example { font-size: 1.1em; font-weight: 500; margin-bottom: 5px; }
+        .vn-translation { color: #555; font-style: italic; }
+        .speak-btn {
+            background-color: #28a745; color: white; border: none; padding: 10px 15px;
+            border-radius: 8px; cursor: pointer; font-size: 0.9em; font-weight: bold;
+            display: flex; align-items: center; gap: 5px;
+        }
+        .speak-btn:hover { background-color: #218838; }
+        .controls { text-align: center; margin-top: 30px; }
+        .next-btn {
+            background-color: var(--primary); color: white; border: none;
+            padding: 15px 30px; font-size: 1.2em; font-weight: bold;
+            border-radius: 8px; cursor: pointer; transition: background-color 0.3s;
+        }
+        .next-btn:hover { background-color: #004085; }
+        .done-msg { text-align: center; color: #28a745; font-size: 1.5em; padding: 40px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏗️ 100 Từ Vựng Blender & Tiếng Anh RTG</h1>
+        <div class="progress" id="progress">Đang tải dữ liệu...</div>
+        <div id="word-container"></div>
+        <div class="controls">
+            <button class="next-btn" id="next-btn" onclick="nextWords()">Đã thuộc! Học tiếp 5 từ 🚀</button>
+        </div>
+    </div>
+
+    <script>
+        // MẢNG DỮ LIỆU TỪ VỰNG - COPY CÁC PHẦN TIẾP THEO NỐI VÀO ĐÂY
+        const vocabData = [
+            { word: "Modeling", type: "n", meaning: "Dựng hình 3D / Mô phỏng", example: "In my mind, I am modeling the optimal path to lift the container over the stacked tiers.", translation: "Trong đầu, tôi đang dựng mô phỏng đường đi tối ưu để nhấc container qua các tầng đã xếp." },
+            { word: "Texturing", type: "n", meaning: "Tạo chất liệu / Bề mặt", example: "The texturing of the container surface tells me if it is slippery when wet.", translation: "Bề mặt của container cho tôi biết liệu nó có trơn trượt khi ướt hay không." },
+            { word: "Lighting", type: "n", meaning: "Đánh sáng / Ánh sáng", example: "Good lighting in the yard at night is essential for safe RTG operations.", translation: "Hệ thống chiếu sáng tốt ở bãi vào ban đêm là điều thiết yếu để vận hành RTG an toàn." },
+            { word: "Shading", type: "n", meaning: "Đổ bóng / Che khuất", example: "The shading from the stacked 40-foot containers makes it hard to see the truck below.", translation: "Bóng đổ từ các container 40 feet xếp chồng khiến việc nhìn thấy xe tải bên dưới trở nên khó khăn." },
+            { word: "Rendering", type: "n", meaning: "Xuất hình / Hiển thị", example: "The terminal operating system is rendering the updated yard map on my screen.", translation: "Hệ thống quản lý cảng đang hiển thị bản đồ bãi cập nhật lên màn hình của tôi." },
+            { word: "Viewport", type: "n", meaning: "Khung nhìn (không gian quan sát)", example: "My viewport from the cabin gives me a clear view of the entire block.", translation: "Khung nhìn từ cabin cho tôi góc quan sát rõ ràng toàn bộ line xếp hàng." },
+            { word: "Mesh", type: "n", meaning: "Lưới / Lưới an toàn", example: "The safety mesh around the walkways prevents accidental falls from the crane.", translation: "Lưới an toàn quanh các lối đi ngăn ngừa tai nạn rơi khỏi cẩu." },
+            { word: "Primitive", type: "adj/n", meaning: "Cơ bản / Nguyên thủy", example: "The primitive function of an RTG is to stack and transport heavy containers.", translation: "Chức năng cơ bản của một cẩu RTG là xếp chồng và di chuyển các container nặng." },
+            { word: "Object", type: "n", meaning: "Vật thể / Đối tượng", example: "The main object we handle every day is a steel shipping container.", translation: "Vật thể chính mà chúng ta xử lý mỗi ngày là container vận chuyển bằng thép." },
+            { word: "Geometry", type: "n", meaning: "Hình học / Cấu trúc bãi", example: "You must understand the geometry of the yard to avoid collisions while gantry driving.", translation: "Bạn phải hiểu cấu trúc hình học của bãi để tránh va chạm khi chạy di chuyển dọc bãi (gantry)." },
+            { word: "Modifier", type: "n", meaning: "Công cụ điều chỉnh / Biến đổi", example: "I use the spreader modifier controls to expand from 20 feet to 40 feet.", translation: "Tôi dùng cụm điều khiển thay đổi khung cẩu để mở rộng từ 20 feet lên 40 feet." },
+            { word: "Subdivision", type: "n", meaning: "Sự phân chia khu vực", example: "The container yard is divided into specific subdivisions called blocks and bays.", translation: "Bãi container được chia thành các khu vực nhỏ cụ thể gọi là block và bay." },
+            { word: "Solidify", type: "v", meaning: "Tạo độ dày / Nắm vững", example: "You must solidify your understanding of safety rules before operating the crane.", translation: "Bạn phải nắm thật vững các quy tắc an toàn trước khi vận hành cẩu." },
+            { word: "Workflow", type: "n", meaning: "Quy trình làm việc", example: "A smooth workflow between the RTG operator and truck drivers saves a lot of time.", translation: "Một quy trình làm việc trơn tru giữa lái cẩu RTG và tài xế xe tải giúp tiết kiệm rất nhiều thời gian." },
+            { word: "Non-destructive", type: "adj", meaning: "Không phá hủy (Quy trình an toàn)", example: "We perform non-destructive testing on the crane's cables to check for wear and tear.", translation: "Chúng tôi thực hiện kiểm tra không phá hủy trên cáp cẩu để xem xét độ hao mòn." },
+            { word: "Interface", type: "n", meaning: "Giao diện (Màn hình điều khiển)", example: "The touch screen interface in the cabin shows the exact weight of the load.", translation: "Giao diện màn hình cảm ứng trong cabin hiển thị chính xác trọng lượng hàng." },
+            { word: "Resolution", type: "n", meaning: "Độ phân giải", example: "The camera screen has high resolution, so I can see the twist-locks clearly.", translation: "Màn hình camera có độ phân giải cao, nên tôi có thể nhìn rõ các gù khóa (twist-locks)." },
+            { word: "Scale", type: "n", meaning: "Tỷ lệ / Cân tải trọng", example: "The load scale warns me immediately if the container exceeds the safe working limit.", translation: "Cân tải trọng cảnh báo tôi ngay lập tức nếu container vượt quá giới hạn làm việc an toàn." },
+            { word: "Axis", type: "n", meaning: "Trục (di chuyển)", example: "The trolley moves along the horizontal axis of the gantry structure.", translation: "Xe con (trolley) di chuyển dọc theo trục ngang của kết cấu dầm cẩu." },
+            { word: "Cursor", type: "n", meaning: "Con trỏ (trên màn hình)", example: "I move the cursor on the screen to select the next container job in the system.", translation: "Tôi di chuyển con trỏ trên màn hình để chọn lệnh gắp container tiếp theo trong hệ thống." },
+            { word: "Vertex", type: "n", meaning: "Đỉnh / Góc", example: "I carefully check the four vertices of the container to ensure the twist-locks are aligned.", translation: "Tôi cẩn thận kiểm tra 4 đỉnh (góc) của container để đảm bảo các gù khóa đã được căn chỉnh." },
+            { word: "Edge", type: "n", meaning: "Cạnh / Mép", example: "Lower the spreader slowly so it doesn't hit the edge of the adjacent container.", translation: "Hạ khung cẩu (spreader) từ từ để nó không va vào mép của container xếp kề bên." },
+            { word: "Face", type: "n", meaning: "Mặt / Bề mặt", example: "The front face of the reefer container has the cooling unit.", translation: "Mặt trước của container lạnh (reefer) có gắn hệ thống làm lạnh." },
+            { word: "Loop cut", type: "n", meaning: "Đường cắt vòng / Vòng dây cáp", example: "During maintenance, we inspect the wire rope for any broken strands or loop cuts.", translation: "Trong lúc bảo dưỡng, chúng tôi kiểm tra dây cáp xem có sợi nào bị đứt hoặc đứt vòng lặp không." },
+            { word: "Inset", type: "v/n", meaning: "Gắn lõm vào / Khung chìm", example: "The corner castings are inset into the eight corners of the shipping container.", translation: "Các góc đúc (corner casting) được gắn lõm vào 8 góc của container vận chuyển." },
+            { word: "Extrude", type: "v", meaning: "Kéo dài ra / Mở rộng", example: "Do not extrude the flippers too early before reaching the target container.", translation: "Đừng mở ngàm (flippers) quá sớm trước khi đến đúng vị trí container mục tiêu." },
+            { word: "Radius", type: "n", meaning: "Bán kính", example: "Ensure the truck makes a turn within the safe radius under the crane's legs.", translation: "Đảm bảo xe tải quay đầu trong bán kính an toàn dưới gầm chân cẩu." },
+            { word: "Depth", type: "n", meaning: "Chiều sâu / Độ sâu", example: "I need to judge the depth accurately from the cabin to stack the container in the 5th tier.", translation: "Tôi cần ước lượng độ sâu thật chính xác từ cabin để xếp container vào tầng thứ 5." },
+            { word: "Thickness", type: "n", meaning: "Độ dày", example: "The thickness of the lifting cables ensures they can handle loads up to 40 tons.", translation: "Độ dày của cáp cẩu đảm bảo chúng có thể chịu tải lên đến 40 tấn." },
+            { word: "Gizmo", type: "n", meaning: "Công cụ điều hướng / Tay trang", example: "I use the cabin joystick, which acts like a control gizmo, to move the trolley.", translation: "Tôi dùng tay trang trong cabin, hoạt động giống như một công cụ điều hướng, để di chuyển xe con (trolley)." },
+            { word: "Shortcut", type: "n", meaning: "Đường tắt / Đi tắt", example: "Taking a shortcut by bypassing the anti-sway system is strictly forbidden.", translation: "Việc đi đường tắt bằng cách bỏ qua hệ thống chống lắc bị nghiêm cấm hoàn toàn." },
+            { word: "Hotkey", type: "n", meaning: "Phím nóng / Nút khẩn cấp", example: "I will hit the emergency stop hotkey immediately if I hear a strange mechanical noise.", translation: "Tôi sẽ nhấn ngay nút nóng dừng khẩn cấp nếu nghe thấy tiếng động cơ khí lạ." },
+            { word: "Orbit", type: "v", meaning: "Xoay quanh", example: "Since I can't orbit around the load, I rely on multiple cameras to check blind spots.", translation: "Vì tôi không thể đi xoay quanh hàng hóa, tôi phải dựa vào nhiều camera để kiểm tra điểm mù." },
+            { word: "Pan", type: "v", meaning: "Lướt ngang (Camera)", example: "I pan the monitor view to check the truck lane before lowering the 40-foot box.", translation: "Tôi lướt góc nhìn màn hình để kiểm tra làn xe tải trước khi hạ thùng 40 feet xuống." },
+            { word: "Zoom", type: "v", meaning: "Phóng to", example: "I zoom in the camera to see the container's seal number clearly from the top.", translation: "Tôi phóng to camera để nhìn rõ số chì (seal) của container từ trên cao." },
+            { word: "Scroll", type: "v", meaning: "Cuộn (màn hình)", example: "I scroll through the terminal operating system (TOS) to find the next job instruction.", translation: "Tôi cuộn màn hình hệ thống quản lý cảng (TOS) để tìm lệnh làm việc tiếp theo." },
+            { word: "Drag", type: "v", meaning: "Kéo lê", example: "Never drag a container on the ground; always lift it completely in the air.", translation: "Không bao giờ được kéo lê container trên mặt đất; luôn phải nhấc bổng nó lên không trung." },
+            { word: "Grab", type: "v", meaning: "Gắp / Cầm nắm", example: "The spreader uses four twist-locks to grab the container safely.", translation: "Khung cẩu sử dụng 4 gù khóa để gắp container một cách an toàn." },
+            { word: "Rotate", type: "v", meaning: "Xoay", example: "I rotate the spreader slightly to match the angled chassis of the incoming truck.", translation: "Tôi xoay khung cẩu một chút để khớp với rơ-moóc bị đỗ lệch của xe tải đang tiến vào." },
+            { word: "Select", type: "v", meaning: "Chọn", example: "Always select the correct bay and row on the computer before moving the gantry.", translation: "Luôn chọn đúng bay (dãy) và row (hàng) trên máy tính trước khi di chuyển cẩu dọc bãi." },
+            { word: "Delete", type: "v", meaning: "Xóa bỏ", example: "I must delete the completed job from the Terminal Operating System.", translation: "Tôi phải xóa lệnh gắp đã hoàn thành khỏi hệ thống quản lý cảng (TOS)." },
+            { word: "Tweak", type: "v", meaning: "Tinh chỉnh nhỏ", example: "I tweak the joystick slightly to align the flippers perfectly with the container.", translation: "Tôi tinh chỉnh tay trang một chút để căn ngàm cẩu (flippers) thật chuẩn với container." },
+            { word: "Emulate", type: "v", meaning: "Giả lập", example: "Before driving the real RTG, we use a simulator to emulate yard operations.", translation: "Trước khi lái RTG thật, chúng tôi dùng hệ thống mô phỏng để giả lập các hoạt động dưới bãi." },
+            { word: "Anchor", type: "v", meaning: "Neo / Gắn chặt", example: "During storm warnings, we must securely anchor the crane to the ground.", translation: "Khi có cảnh báo bão, chúng tôi phải neo chặt cẩu xuống mặt đất để chống gió lùa." },
+            { word: "Cycle", type: "n", meaning: "Chu kỳ / Vòng lặp", example: "A skilled operator can complete one lifting cycle in under two minutes.", translation: "Một người lái cẩu thạo nghề có thể hoàn thành một chu kỳ nâng hạ (gắp-hạ) dưới 2 phút." },
+            { word: "Increment", type: "n", meaning: "Từng phần nhỏ / Từng chút một", example: "Move the trolley in small increments when the load is close to the truck chassis.", translation: "Di chuyển xe con (trolley) từng chút một khi hàng đã sát với rơ-moóc xe tải." },
+            { word: "Activate", type: "v", meaning: "Kích hoạt", example: "Do not activate the twist-locks until the spreader is fully seated.", translation: "Không được kích hoạt gù khóa (twist-locks) cho đến khi khung cẩu đã nằm ngàm hoàn toàn vào 4 góc." },
+            { word: "Confirm", type: "v", meaning: "Xác nhận", example: "I always confirm the container ID with the tallyman on the ground via radio.", translation: "Tôi luôn xác nhận mã số container với nhân viên giao nhận (tally) dưới đất qua bộ đàm." },
+            { word: "Adjust", type: "v", meaning: "Điều chỉnh", example: "Adjust the spreader length to 40 feet for the next incoming truck.", translation: "Điều chỉnh chiều dài khung cẩu lên 40 feet cho chiếc xe tải tiếp theo đang tiến vào." },
+            { word: "Disable", type: "v", meaning: "Vô hiệu hóa / Tắt", example: "Never disable the anti-collision system while driving the gantry along the block.", translation: "Không bao giờ được tắt hệ thống chống va chạm khi đang chạy dọc bãi (gantry)." },
+            { word: "Doughnut / Donut", type: "n", meaning: "Bánh vòng / Chạy vòng tròn", example: "Sometimes drivers make a donut in the empty yard, which is very dangerous.", translation: "Đôi khi các tài xế xe đầu kéo đánh lái xoay vòng tròn dưới bãi trống, điều này cực kỳ nguy hiểm." },
+            { word: "Cube", type: "n", meaning: "Khối lập phương / Hình hộp", example: "A standard shipping container is essentially a giant metal cube.", translation: "Một container vận chuyển tiêu chuẩn về cơ bản là một khối hộp kim loại khổng lồ." },
+            { word: "Cylinder", type: "n", meaning: "Khối trụ / Xy-lanh", example: "The crane uses powerful hydraulic cylinders to move the flippers up and down.", translation: "Cẩu sử dụng các xy-lanh thủy lực mạnh mẽ để gạt ngàm cẩu lên xuống." },
+            { word: "Torus", type: "n", meaning: "Khối hình vòng (như lốp xe)", example: "The massive rubber tires of the RTG have a heavy-duty torus shape.", translation: "Những chiếc lốp cao su khổng lồ của cẩu RTG có hình dáng của khối vòng torus chịu tải nặng." },
+            { word: "Mug", type: "n", meaning: "Cốc / Ly có quai", example: "I always keep a mug of strong coffee in the cabin for the night shift.", translation: "Tôi luôn để sẵn một cốc cà phê đậm đặc trong cabin để giữ tỉnh táo cho ca đêm." },
+            { word: "Mailbox", type: "n", meaning: "Hòm thư / Hộp nhận lệnh", example: "Check the TOS mailbox for any updated stowage plans or priority jobs.", translation: "Kiểm tra hộp nhận lệnh trên hệ thống xem có sơ đồ xếp dỡ mới hay lệnh ưu tiên nào không." },
+            { word: "Environment", type: "n", meaning: "Môi trường / Bối cảnh", example: "Working in a busy port environment requires 100% attention to safety.", translation: "Làm việc trong môi trường cảng biển tấp nập đòi hỏi sự chú ý 100% vào an toàn." },
+            { word: "Complex", type: "adj", meaning: "Phức tạp", example: "Lifting an unbalanced, Out-Of-Gauge (OOG) container is a highly complex operation.", translation: "Nhấc một container mất cân bằng, quá khổ (OOG) là một thao tác cực kỳ phức tạp." },
+            { word: "Challenging", type: "adj", meaning: "Thử thách", example: "Stacking containers 5-high during heavy rain and strong wind is extremely challenging.", translation: "Xếp container cao 5 tầng (tier) trong lúc trời mưa to gió lớn là một thử thách cực đại." },
+            { word: "Achievable", type: "adj", meaning: "Khả thi / Có thể đạt được", example: "With good focus, completing 30 moves per hour is totally achievable.", translation: "Nếu tập trung tốt, việc đạt năng suất 30 nhịp gắp mỗi giờ là hoàn toàn khả thi." },
+            { word: "Portable", type: "adj", meaning: "Cầm tay / Di động", example: "Always carry a portable radio in the cabin to communicate with the signalman.", translation: "Luôn mang theo bộ đàm cầm tay trong cabin để liên lạc với người đánh tín hiệu." },
+            { word: "Extensive", type: "adj", meaning: "Sâu rộng / Bao quát", example: "Operating an E-RTG safely requires extensive training and practice.", translation: "Vận hành cẩu E-RTG an toàn đòi hỏi phải được đào tạo và thực hành sâu rộng." },
+            { word: "Flimsy", type: "adj", meaning: "Mỏng manh / Lỏng lẻo", example: "A flimsy twist-lock pin is a major safety hazard and must be reported immediately.", translation: "Một chốt gù khóa lỏng lẻo là một mối nguy hiểm an toàn lớn và phải được báo cáo ngay lập tức." },
+            { word: "Thicker", type: "adj", meaning: "Dày hơn", example: "The main hoist cables are thicker to safely lift 40-ton loaded containers.", translation: "Cáp tời chính dày hơn để nâng an toàn các container hàng nặng 40 tấn." },
+            { word: "Flat", type: "adj", meaning: "Bằng phẳng", example: "Ensure the ground is completely flat before stacking the bottom tier container.", translation: "Đảm bảo mặt đất hoàn toàn bằng phẳng trước khi xếp container ở tầng dưới cùng." },
+            { word: "Smooth", type: "adj", meaning: "Trơn tru / Mượt mà", example: "Push the joystick gently for a smooth landing onto the truck chassis.", translation: "Đẩy tay trang thật nhẹ nhàng để hạ hàng mượt mà xuống rơ-moóc xe tải." },
+            { word: "Technical", type: "adj", meaning: "Thuộc về kỹ thuật", example: "If the spreader won't expand, call the technical maintenance team via radio.", translation: "Nếu khung cẩu không thể mở rộng, hãy gọi cho đội bảo trì kỹ thuật qua bộ đàm." },
+            { word: "Practical", type: "adj", meaning: "Thực tế", example: "Reading the manual is good, but practical hours on the crane are the best.", translation: "Đọc sách hướng dẫn thì tốt, nhưng số giờ lái thực tế trên cẩu mới là đỉnh nhất." },
+            { word: "Engulfing", type: "adj", meaning: "Bao trùm / Che khuất", example: "Heavy fog engulfing the yard means we must stop all gantry movements.", translation: "Sương mù dày đặc bao trùm bãi có nghĩa là chúng tôi phải dừng mọi hoạt động chạy dọc bãi." },
+            { word: "Jagged", type: "adj", meaning: "Sắc nhọn / Lởm chởm", example: "Be careful of jagged edges on heavily damaged containers to avoid cutting the slings.", translation: "Cẩn thận với các cạnh lởm chởm trên những container bị hỏng nặng để tránh làm đứt cáp cẩu." },
+            { word: "Chunkier", type: "adj", meaning: "To nặng / Đầm chắc hơn", example: "The new twin-lift spreader is chunkier, making it more stable in high winds.", translation: "Khung cẩu gắp đôi (twin-lift) mới to nặng hơn, giúp nó ổn định hơn khi có gió lớn." },
+            { word: "Active", type: "adj", meaning: "Đang hoạt động / Sáng đèn", example: "Wait until the 'locked' indicator light is active before hoisting up.", translation: "Hãy đợi cho đến khi đèn báo 'đã khóa' sáng lên trước khi kéo hàng lên." },
+            { word: "Beginner", type: "n", meaning: "Người mới bắt đầu", example: "As a beginner operator, speed is not as important as precision and safety.", translation: "Với tư cách là một người lái mới, tốc độ không quan trọng bằng sự chính xác và an toàn." },
+            { word: "Tutorial", type: "n", meaning: "Bài hướng dẫn", example: "I watched a tutorial on how to reset the crane's fault system on the touchscreen.", translation: "Tôi đã xem một bài hướng dẫn về cách reset lỗi hệ thống của cẩu trên màn hình cảm ứng." },
+            { word: "Version", type: "n", meaning: "Phiên bản", example: "The IT department just updated the TOS to a newer, faster version.", translation: "Bộ phận IT vừa cập nhật hệ thống TOS lên một phiên bản mới và nhanh hơn." },
+            { word: "Release", type: "n/v", meaning: "Nhả khóa / Giải phóng", example: "Only release the twist-locks when the container is fully supported by the ground.", translation: "Chỉ nhả gù khóa khi container đã nằm hoàn toàn trên mặt đất." },
+            { word: "Application", type: "n", meaning: "Ứng dụng / Phần mềm", example: "The port management application tracks the exact position of every container.", translation: "Phần mềm quản lý cảng theo dõi vị trí chính xác của từng container." },
+            { word: "Trackpad", type: "n", meaning: "Bàn di chuột", example: "The cabin computer has a trackpad, but I prefer using the touchscreen.", translation: "Máy tính trong cabin có bàn di chuột, nhưng tôi thích dùng màn hình cảm ứng hơn." },
+            { word: "Wheel", type: "n", meaning: "Bánh xe / Lốp xe", example: "The RTG has eight massive rubber wheels to travel across the yard.", translation: "Cẩu RTG có 8 bánh lốp cao su khổng lồ để di chuyển khắp bãi." },
+            { word: "Monitor", type: "v/n", meaning: "Giám sát / Màn hình", example: "Always monitor the wind speed display; if it exceeds 20m/s, stop working.", translation: "Luôn giám sát màn hình hiển thị tốc độ gió; nếu vượt quá 20m/s, phải dừng làm việc." },
+            { word: "Magnifying glass", type: "n", meaning: "Kính lúp / Phóng to kiểm tra", example: "I use the camera zoom like a magnifying glass to check if the twist-locks are fully engaged.", translation: "Tôi dùng tính năng thu phóng camera như một chiếc kính lúp để kiểm tra xem gù khóa đã sập hết chưa." },
+            { word: "Preferences", type: "n", meaning: "Tùy chọn cá nhân / Cài đặt", example: "I adjust the seat and screen brightness in the operator preferences before starting my shift.", translation: "Tôi điều chỉnh ghế ngồi và độ sáng màn hình trong phần tùy chọn cá nhân trước khi bắt đầu ca làm việc." },
+            { word: "Computation", type: "n", meaning: "Sự tính toán (hệ thống)", example: "The crane's computer does a quick computation of the container's weight before lifting.", translation: "Máy tính của cẩu thực hiện một phép tính toán nhanh về trọng lượng của container trước khi nhấc lên." },
+            { word: "Download", type: "v", meaning: "Tải xuống / Nhận dữ liệu", example: "The terminal system will download the new work sequence directly to my cabin screen.", translation: "Hệ thống cảng sẽ tải trình tự làm việc mới trực tiếp xuống màn hình cabin của tôi." },
+            { word: "Install", type: "v", meaning: "Cài đặt / Lắp đặt", example: "The maintenance team needs to install a new sensor on the spreader flipper.", translation: "Đội bảo trì cần lắp đặt một cảm biến mới trên ngàm của khung cẩu." },
+            { word: "Squint", type: "v", meaning: "Nheo mắt lại", example: "The sun glare was so strong I had to squint to see the truck's license plate.", translation: "Ánh nắng chói chang đến mức tôi phải nheo mắt lại mới nhìn thấy biển số xe tải." },
+            { word: "Focus", type: "v", meaning: "Tập trung", example: "Always focus entirely on the load; never get distracted by your phone in the cabin.", translation: "Luôn tập trung hoàn toàn vào hàng hóa; không bao giờ để điện thoại làm phân tâm trong cabin." },
+            { word: "Resemble", type: "v", meaning: "Trông giống với", example: "From 25 meters up, the trucks below resemble small toy cars.", translation: "Từ độ cao 25 mét, những chiếc xe tải bên dưới trông giống như những chiếc xe đồ chơi nhỏ." },
+            { word: "Separate", type: "v", meaning: "Tách rời / Phân tách", example: "We must separate the hazardous cargo containers from the regular ones in the yard.", translation: "Chúng ta phải xếp tách rời các container hàng nguy hiểm khỏi các container thông thường trong bãi." },
+            { word: "Avoid", type: "v", meaning: "Tránh, né", example: "Avoid making sudden joystick movements to keep the container from swinging.", translation: "Tránh thực hiện các thao tác giật tay trang đột ngột để giữ cho container không bị lắc lư." },
+            { word: "Overlap", type: "v", meaning: "Chồng chéo lên nhau / Lệch mép", example: "Ensure the container corners do not overlap the edges of the one below it.", translation: "Đảm bảo các góc container không nằm xếp chồng chệch ra ngoài mép của container bên dưới." },
+            { word: "Appear", type: "v", meaning: "Xuất hiện", example: "A warning message will appear on the monitor if there is a twist-lock failure.", translation: "Một tin nhắn cảnh báo sẽ xuất hiện trên màn hình nếu có lỗi ở gù khóa." },
+            { word: "Commit", type: "v", meaning: "Xác nhận thực hiện", example: "Once you press the hoist button, you commit to moving that 30-ton load.", translation: "Một khi bạn nhấn nút nâng tời, bạn đã xác nhận thao tác di chuyển khối hàng 30 tấn đó." },
+            { word: "Average out", type: "v", meaning: "Cào bằng / Chia đều", example: "The twin-lift spreader helps average out the weight when lifting two 20-foot containers.", translation: "Khung cẩu gắp đôi giúp chia đều trọng lượng khi nhấc cùng lúc hai container 20 feet." },
+            { word: "Save", type: "v", meaning: "Lưu lại / Tiết kiệm", example: "Driving the gantry smoothly will save a lot of electrical power for the E-RTG.", translation: "Lái chạy dọc bãi mượt mà sẽ giúp tiết kiệm rất nhiều điện năng cho cẩu E-RTG." },
+            { word: "Override", type: "v", meaning: "Ghi đè / Điều khiển vượt quyền", example: "Only the supervisor can authorize you to override the crane's automatic safety stop.", translation: "Chỉ có giám sát viên mới có quyền cho phép bạn dùng phím ghi đè để bỏ qua chế độ dừng an toàn tự động của cẩu." },
+            { word: "Unzip", type: "v", meaning: "Giải nén (tệp tin)", example: "I need to unzip the new operating manual file sent by the IT department.", translation: "Tôi cần giải nén tệp tài liệu hướng dẫn vận hành mới do phòng IT gửi đến." },
+            { word: "Guess", type: "v", meaning: "Đoán / Ước chừng", example: "Never guess the container's weight; always rely on the crane's load scale.", translation: "Không bao giờ được đoán mò trọng lượng container; luôn phải dựa vào cân tải trọng của cẩu." },
+            { word: "Throw", type: "v", meaning: "Giao phó liên tục / Nhồi lệnh", example: "The system will throw multiple job orders at you during peak hours.", translation: "Hệ thống sẽ đẩy liên tục nhiều lệnh làm việc cho bạn trong những giờ cao điểm." },
+            { word: "Print out", type: "v", meaning: "In ra", example: "The yard planner will print out the stowage plan for the night shift team.", translation: "Nhân viên quy hoạch bãi sẽ in sơ đồ xếp dỡ ra giấy cho đội làm ca đêm." }
+        ];
+
+        let currentIndex = 0;
+        const wordsPerPage = 5;
+
+        // Hàm phát âm sử dụng Web Speech API
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US'; // Giọng Mỹ
+                utterance.rate = 0.9;     // Tốc độ đọc
+                window.speechSynthesis.speak(utterance);
+            } else {
+                alert("Rất tiếc, trình duyệt của bạn không hỗ trợ phát âm. Hãy thử dùng Google Chrome nhé!");
+            }
+        }
+
+        // Hàm hiển thị từ vựng ra màn hình
+        function renderWords() {
+            const container = document.getElementById('word-container');
+            container.innerHTML = '';
+            
+            if (currentIndex >= vocabData.length) {
+                container.innerHTML = `
+                    <div class="done-msg">
+                        <h2>🎉 Chúc mừng Thành!</h2>
+                        <p>Bạn đã hoàn thành xuất sắc toàn bộ ${vocabData.length} từ vựng.</p>
+                        <p>Vừa vững Blender, vừa master tiếng Anh buồng lái RTG luôn!</p>
+                    </div>`;
+                document.getElementById('next-btn').style.display = 'none';
+                document.getElementById('progress').style.display = 'none';
+                return;
+            }
+
+            const endIndex = Math.min(currentIndex + wordsPerPage, vocabData.length);
+            
+            for (let i = currentIndex; i < endIndex; i++) {
+                const word = vocabData[i];
+                const card = document.createElement('div');
+                card.className = 'word-card';
+                card.innerHTML = `
+                    <div class="word-title">
+                        <span>${word.word} <span class="word-type">(${word.type})</span></span>
+                        <button class="speak-btn" onclick="speak('${word.word}')">🔊 Phát âm</button>
+                    </div>
+                    <div class="word-meaning">${word.meaning}</div>
+                    <div class="word-example">
+                        <div class="en-example">"${word.example}"</div>
+                        <div class="vn-translation">${word.translation}</div>
+                    </div>
+                `;
+                container.appendChild(card);
+            }
+            
+            document.getElementById('progress').innerText = `Đang học từ ${currentIndex + 1} đến ${endIndex} (Tổng: ${vocabData.length} từ)`;
+        }
+
+        // Hàm chuyển sang 5 từ tiếp theo
+        function nextWords() {
+            currentIndex += wordsPerPage;
+            renderWords();
+            // Cuộn trang lên đầu
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Khởi chạy ứng dụng lần đầu tiên
+        renderWords();
+    </script>
+</body>
+</html>
+
+
