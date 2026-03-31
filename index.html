@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>S23 Ultra Command Center</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --gold: #d4af37;
+            --text-dim-global: #aaaaaa;
+            
+            /* Theme Colors */
+            --theme-blender: #00d2ff;
+            --theme-english: #00ff00;
+            --theme-gym: #39ff14;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #000;
+            background-image: url('https://raw.githubusercontent.com/tropicaldr4gon-commits/PAPM/516073e5cc22ba0cafff565903e9d50cdfb68088/nen.jpg');
+            background-size: 100% 100%;
+            background-position: center top;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+            color: #ffffff;
+            margin: 0; padding: 0;
+            overflow-x: hidden;
+            display: flex; flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* ----- FULLSCREEN OVERLAY ----- */
+        #init-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            /* Đã thêm ảnh nền ở đây, kèm một lớp phủ mờ để dễ nhìn chữ */
+            background-image: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.8)), url('https://raw.githubusercontent.com/tropicaldr4gon-commits/PAPM/540b28fe4bcfdb593a00c6edb557e1192204141e/Untitled-2.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            z-index: 9999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+        }
+        #init-overlay h1 { color: var(--gold); letter-spacing: 5px; text-align: center; text-shadow: 0 0 15px var(--gold); margin-bottom: 40px;}
+        #init-btn {
+            padding: 20px 40px; background: rgba(212,175,55,0.1); color: var(--gold);
+            border: 2px solid var(--gold); font-size: 1rem; cursor: pointer;
+            font-family: inherit; font-weight: bold; letter-spacing: 2px;
+            border-radius: 8px; text-transform: uppercase; transition: 0.3s;
+            box-shadow: 0 0 20px rgba(212,175,55,0.3);
+            backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
+        }
+        #init-btn:active { background: var(--gold); color: #000; }
+
+        /* ----- NAVIGATION & LAYOUT ----- */
+        .view-section {
+            display: none; flex-direction: column; align-items: center;
+            min-height: 100vh; padding: 15px; padding-top: 80px; padding-bottom: 40px;
+        }
+        .view-section.active { display: flex; }
+        
+        .nav-bar {
+            position: fixed; top: 0; left: 0; width: 100%;
+            background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+            border-bottom: 1px solid var(--gold); padding: 15px 20px;
+            z-index: 999; display: none; align-items: center; justify-content: space-between;
+        }
+        .nav-bar button {
+            background: transparent; color: var(--gold); border: 1px solid var(--gold);
+            padding: 8px 15px; border-radius: 4px; font-family: inherit;
+            font-weight: bold; cursor: pointer; font-size: 0.9rem;
+        }
+        .nav-bar .coin-mini {
+            color: var(--gold); font-weight: bold; border: 1px solid var(--gold);
+            padding: 8px 15px; border-radius: 4px; background: rgba(212,175,55,0.1);
+        }
+
+        /* ----- HOME INTERFACE ----- */
+        .home-container { max-width: 500px; width: 100%; margin-top: 5vh; text-align: center; }
+        .home-title { letter-spacing: 3px; border-bottom: 1px solid var(--gold); padding-bottom: 15px; margin-bottom: 40px; font-size: 1.1rem; color: var(--gold); text-transform: uppercase; text-shadow: 0 0 10px #000;}
+        
+        .menu-btn.home-btn {
+            background: rgba(10, 10, 10, 0.65); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+            padding: 22px; margin-bottom: 18px; width: 100%;
+            font-family: inherit; font-size: 1rem; font-weight: bold; cursor: pointer;
+            border: 1px solid rgba(212,175,55,0.4); border-radius: 8px; text-transform: uppercase; color: #fff;
+            transition: 0.2s; display: block; letter-spacing: 1px;
+        }
+        .menu-btn.home-btn:active { transform: scale(0.97); background: rgba(212,175,55,0.2); }
+        .btn-reset { border-color: #ff003c !important; color: #ff003c !important; margin-top: 40px !important; opacity: 0.6; background: transparent !important; border-style: dashed !important;}
+
+        /* ----- APP UI CONTAINER ----- */
+        .app-container {
+            max-width: 500px; width: 100%; 
+            background: rgba(10, 10, 10, 0.65); 
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            padding: 25px 20px; border-radius: 12px; 
+            box-shadow: 0 8px 32px rgba(0,0,0,0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .header { text-align: center; border-bottom: 1px solid; padding-bottom: 15px; margin-bottom: 25px; }
+        .header h2 { margin: 0; letter-spacing: 2px; font-size: 1.2rem; }
+        
+        .mission-box { background: rgba(0,0,0,0.4); border: 1px solid; border-left-width: 6px; padding: 18px; margin-bottom: 20px; border-radius: 6px; }
+        .mission-month { font-size: 0.85rem; font-weight: bold; margin-bottom: 8px; text-transform: uppercase; }
+        .mission-week-content { font-size: 1.1rem; color: #fff; font-weight: bold; line-height: 1.5; }
+        
+        .countdown-box { text-align: center; background: rgba(0,0,0,0.7); border: 1px solid; padding: 20px; margin-bottom: 25px; border-radius: 6px; }
+        .countdown-timer { font-size: 2.8rem; font-weight: bold; letter-spacing: 2px; }
+        
+        .progress-label { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 8px; font-weight: bold; text-transform: uppercase; color: #ddd;}
+        .progress-bar-bg { background: rgba(0,0,0,0.8); height: 6px; width: 100%; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.2); border-radius: 3px; overflow: hidden; }
+        .progress-bar-fill { height: 100%; width: 0%; transition: width 0.4s ease; }
+        
+        .task-list { display: flex; flex-direction: column; gap: 15px; margin-bottom: 25px; }
+        .task-item { background: rgba(0,0,0,0.5); padding: 18px; border: 1px solid rgba(255,255,255,0.15); display: flex; align-items: flex-start; gap: 15px; cursor: pointer; transition: 0.2s; border-radius: 6px; }
+        
+        .task-item.disabled { opacity: 0.4; pointer-events: none; filter: grayscale(1); }
+        .task-item.completed { background: rgba(0, 255, 0, 0.1); border-color: rgba(0, 255, 0, 0.3); }
+        .task-item.completed .task-desc { color: #777; text-decoration: line-through; }
+        
+        input[type="checkbox"] { width: 26px; height: 26px; margin-top: 2px; flex-shrink: 0; cursor: pointer; accent-color: var(--gold);}
+        .task-title { font-weight: bold; margin-bottom: 6px; font-size: 1rem; text-transform: uppercase; }
+        .task-desc { font-size: 0.9rem; color: #ccc; line-height: 1.5; }
+        
+        .btn-main {
+            background: rgba(0,0,0,0.5); border: 2px solid var(--text-dim-global); color: var(--text-dim-global);
+            padding: 22px; width: 100%; font-size: 1.1rem; font-family: inherit; font-weight: bold;
+            text-transform: uppercase; cursor: not-allowed; transition: 0.3s; border-radius: 8px; letter-spacing: 2px;
+        }
+        .btn-main.ready { cursor: pointer; }
+        .btn-main.ready:active { color: #000 !important; }
+
+        /* WARNING MARQUEE */
+        .warning-marquee { display: none; width: 100%; height: 46px; background: rgba(50,0,0,0.8); border: 1px solid #ff0000; margin-bottom: 20px; position: relative; overflow: hidden; border-radius: 4px;}
+        .warning-text { 
+            position: absolute; line-height: 44px; color: #ff0000; font-weight: bold; font-size: 1.1rem; 
+            white-space: nowrap; width: 100%; text-align: center;
+            animation: scroll-warning 5s linear infinite; 
+        }
+        @keyframes scroll-warning { from { left: -100%; } to { left: 100%; } }
+        @keyframes move { from { opacity: 0.3; } to { opacity: 1; } }
+
+        /* COLOR THEMES */
+        #view-blender .app-container { border-color: rgba(0, 210, 255, 0.3); }
+        #view-blender .header, #view-blender .header h2 { border-color: var(--theme-blender); color: var(--theme-blender); }
+        #view-blender .mission-box, #view-blender .countdown-box { border-color: var(--theme-blender); }
+        #view-blender .mission-month, #view-blender .countdown-timer, #view-blender .task-title { color: var(--theme-blender); }
+        #view-blender .progress-bar-fill { background: var(--theme-blender); box-shadow: 0 0 10px var(--theme-blender); }
+        #view-blender .task-item.completed { border-color: var(--theme-blender); }
+        #view-blender input[type="checkbox"] { accent-color: var(--theme-blender); }
+        #view-blender .btn-main.ready { border-color: var(--theme-blender); color: var(--theme-blender); box-shadow: 0 0 15px rgba(0, 210, 255, 0.2); }
+        #view-blender .btn-main.ready:active { background: var(--theme-blender); }
+
+        #view-english .app-container { border-color: rgba(0, 255, 0, 0.3); }
+        #view-english .header, #view-english .header h2 { border-color: var(--theme-english); color: var(--theme-english); }
+        #view-english .mission-box, #view-english .countdown-box { border-color: var(--theme-english); }
+        #view-english .mission-month, #view-english .countdown-timer, #view-english .task-title { color: var(--theme-english); }
+        #view-english .progress-bar-fill { background: var(--theme-english); box-shadow: 0 0 10px var(--theme-english); }
+        #view-english .task-item.completed { border-color: var(--theme-english); }
+        #view-english input[type="checkbox"] { accent-color: var(--theme-english); }
+        #view-english .btn-main.ready { border-color: var(--theme-english); color: var(--theme-english); box-shadow: 0 0 15px rgba(0, 255, 0, 0.2); }
+        #view-english .btn-main.ready:active { background: var(--theme-english); }
+
+        #view-gym .app-container { border-color: rgba(57, 255, 20, 0.3); }
+        #view-gym .header, #view-gym .header h2 { border-color: var(--theme-gym); color: var(--theme-gym); }
+        #view-gym .mission-box, #view-gym .countdown-box { border-color: var(--theme-gym); }
+        #view-gym .mission-month, #view-gym .countdown-timer, #view-gym .task-title { color: var(--theme-gym); }
+        #view-gym .progress-bar-fill { background: var(--theme-gym); box-shadow: 0 0 10px var(--theme-gym); }
+        #view-gym .task-item.completed { border-color: var(--theme-gym); }
+        #view-gym input[type="checkbox"] { accent-color: var(--theme-gym); }
+        #view-gym .btn-main.ready { border-color: var(--theme-gym); color: var(--theme-gym); box-shadow: 0 0 15px rgba(57, 255, 20, 0.2); }
+        #view-gym .btn-main.ready:active { background: var(--theme-gym); }
+
+        /* RULES SLOT */
+        .rules-marquee {
+            width: 100%; height: 40px; background: rgba(34,0,0,0.8); border: 1px solid #ff0000;
+            margin-bottom: 25px; position: relative; overflow: hidden; border-radius: 4px;
+            display: flex; align-items: center; box-shadow: 0 0 15px rgba(255, 0, 0, 0.3);
+        }
+        .rules-marquee-text {
+            white-space: nowrap; color: #ff0000; font-weight: bold; font-size: 1rem; letter-spacing: 1px;
+            position: absolute; animation: scroll-left 5s linear infinite, blink-text 0.8s infinite alternate;
+        }
+        @keyframes scroll-left { 0% { left: 100%; } 100% { left: -120%; } }
+        @keyframes blink-text { from { opacity: 1; text-shadow: 0 0 10px #ff0000; } to { opacity: 0.4; text-shadow: none; } }
+
+        .slot-machine { display: flex; justify-content: center; gap: 15px; margin: 30px 0; width: 100%; }
+        .slot { width: 28vw; max-width: 100px; height: 130px; border: 3px solid var(--gold); background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; font-size: 4rem; font-weight: 900; border-radius: 12px; color: var(--gold); text-shadow: 0 0 15px var(--gold); box-shadow: inset 0 0 20px rgba(0,0,0,0.8);}
+        .rules-stats { display: flex; gap: 15px; width: 100%; margin-bottom: 25px; }
+        .rules-stat-card { flex: 1; border: 1px solid var(--gold); padding: 20px 10px; text-align: center; border-radius: 8px; background: rgba(212,175,55,0.1); }
+        .rules-stat-label { font-size: 0.75rem; color: var(--gold); margin-bottom: 8px; font-weight: bold; }
+        .rules-stat-value { font-size: 1.8rem; font-weight: bold; color: #fff; }
+        #rules_main-display { border: 1px dashed var(--gold); padding: 30px 20px; text-align: center; margin-top: 25px; border-radius: 8px; width: 100%; min-height: 130px; display: flex; flex-direction: column; justify-content: center; background: rgba(212,175,55,0.05);}
+
+        /* MODALS */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index: 3000; justify-content: center; align-items: center; }
+        .modal-content { background: rgba(10,10,10,0.9); padding: 30px; border: 1px solid var(--gold); width: 90%; max-width: 400px; text-align: center; border-radius: 8px; box-shadow: 0 0 40px rgba(0,0,0,0.8);}
+        .modal-content h3 { color: var(--gold); margin-top: 0; letter-spacing: 2px; font-size: 1.2rem; margin-bottom: 20px;}
+        .modal-content ul, .modal-content p { text-align: left; color: #fff; line-height: 1.6; font-size: 0.95rem; margin-bottom: 25px; font-weight: bold;}
+        .modal-content ul { padding-left: 20px; }
+        .modal-content p { text-align: center; color: var(--gold); }
+        .btn-pass { background: rgba(0,0,0,0.5); color: var(--gold); border: 2px solid var(--gold); padding: 18px; width: 100%; font-family: inherit; font-size: 1rem; font-weight: bold; text-transform: uppercase; cursor: pointer; border-radius: 6px; letter-spacing: 1px;}
+        .btn-pass:active { background: var(--gold); color: #000; }
+    </style>
+</head>
+<body>
+
+<div id="init-overlay">
+    <h1>SYSTEM STANDBY</h1>
+    <button id="init-btn" onclick="enterFullscreen()">INITIALIZE & ENTER FULLSCREEN</button>
+</div>
+
+<div class="nav-bar" id="main-nav">
+    <button onclick="goHome()">⬅ HOME</button>
+    <div class="coin-mini">🪙 <span id="nav-coin-count">0</span></div>
+</div>
+
+<div id="view-home" class="view-section active">
+    <div class="home-container">
+        <h2 class="home-title">MAIN COMMAND CENTER</h2>
+        
+        <button class="menu-btn home-btn" onclick="switchView('view-blender')" style="border-left-color: var(--theme-blender); color: var(--theme-blender);">🖥️ BLENDER 3D</button>
+        <button class="menu-btn home-btn" onclick="switchView('view-english')" style="border-left-color: var(--theme-english); color: var(--theme-english);">🎧 ENGLISH COMBAT</button>
+        <button class="menu-btn home-btn" onclick="switchView('view-gym')" style="border-left-color: var(--theme-gym); color: var(--theme-gym);">💪 GYM RECOVERY</button>
+        <button class="menu-btn home-btn" onclick="switchView('view-rules')" style="border-left-color: var(--gold); color: var(--gold);">🎰 RULES PROTOCOL</button>
+        
+        <button class="menu-btn home-btn btn-reset" onclick="triggerReset()">⚠️ FACTORY RESET</button>
+    </div>
+</div>
+
+<div id="view-blender" class="view-section">
+    <div class="app-container">
+        <div class="header"><h2>BLENDER STRATEGIC COMMAND</h2></div>
+        
+        <div class="mission-box">
+            <div class="mission-month" id="bl_month">...</div>
+            <div class="mission-week-content" id="bl_week">...</div>
+        </div>
+        
+        <div class="warning-marquee" id="bl_warning"><div class="warning-text">YOU ARE A FAILURE - TIME IS UP - YOU ARE A FAILURE</div></div>
+        
+        <div class="countdown-box">
+            <div style="font-size: 0.75rem; color: #aaa; margin-bottom: 8px; font-weight: bold; text-transform: uppercase;">Time Remaining (48H)</div>
+            <div class="countdown-timer" id="bl_timer">48:00:00</div>
+        </div>
+        
+        <div class="progress-label"><span>Daily Energy</span> <span id="bl_lblEnergy">0%</span></div>
+        <div class="progress-bar-bg"><div class="progress-bar-fill" id="bl_barEnergy"></div></div>
+        
+        <div class="progress-label"><span>Weekly Progress (Day <span id="bl_lblDay">1</span>/7)</span></div>
+        <div class="progress-bar-bg"><div class="progress-bar-fill" id="bl_barWeek"></div></div>
+
+        <div class="task-list">
+            <label class="task-item disabled" id="bl_item1">
+                <input type="checkbox" id="bl_chk1" onchange="bl_toggle()">
+                <div><div class="task-title" id="bl_t1">...</div><div class="task-desc" id="bl_d1">...</div></div>
+            </label>
+            <label class="task-item disabled" id="bl_item2">
+                <input type="checkbox" id="bl_chk2" onchange="bl_toggle()">
+                <div><div class="task-title" id="bl_t2">...</div><div class="task-desc" id="bl_d2">...</div></div>
+            </label>
+        </div>
+        <button class="btn-main" id="bl_btn" onclick="bl_action()">ACTIVATE CYCLE (48H)</button>
+    </div>
+</div>
+
+<div id="view-english" class="view-section">
+    <div class="app-container">
+        <div class="header"><h2>ENGLISH COMMAND CENTER</h2></div>
+        
+        <div class="mission-box">
+            <div class="mission-month" id="en_month">...</div>
+            <div class="mission-week-content" id="en_week">...</div>
+        </div>
+        
+        <div class="warning-marquee" id="en_warning"><div class="warning-text">YOU ARE A FAILURE - TIME IS UP - YOU ARE A FAILURE</div></div>
+        
+        <div class="countdown-box">
+            <div style="font-size: 0.75rem; color: #aaa; margin-bottom: 8px; font-weight: bold; text-transform: uppercase;">Time Remaining (48H)</div>
+            <div class="countdown-timer" id="en_timer">48:00:00</div>
+        </div>
+
+        <div class="progress-label"><span>Daily Energy</span> <span id="en_lblEnergy">0%</span></div>
+        <div class="progress-bar-bg"><div class="progress-bar-fill" id="en_barEnergy"></div></div>
+        
+        <div class="progress-label"><span>Weekly Progress (Day <span id="en_lblDay">1</span>/7)</span></div>
+        <div class="progress-bar-bg"><div class="progress-bar-fill" id="en_barWeek"></div></div>
+        
+        <div class="progress-label"><span>Monthly Progress (Week <span id="en_lblWeek">1</span>/4)</span></div>
+        <div class="progress-bar-bg"><div class="progress-bar-fill" id="en_barMonth"></div></div>
+
+        <div class="task-list">
+            <label class="task-item disabled" id="en_item1">
+                <input type="checkbox" id="en_chk1" onchange="en_toggle()">
+                <div><div class="task-title" id="en_t1">🎧 PASSIVE LISTENING (30M)</div><div class="task-desc" id="en_d1">...</div></div>
+            </label>
+            <label class="task-item disabled" id="en_item2">
+                <input type="checkbox" id="en_chk2" onchange="en_toggle()">
+                <div><div class="task-title" id="en_t2">📖 ACTIVE LEARNING (20M)</div><div class="task-desc" id="en_d2">...</div></div>
+            </label>
+            <label class="task-item disabled" id="en_item3">
+                <input type="checkbox" id="en_chk3" onchange="en_toggle()">
+                <div><div class="task-title" id="en_t3">✍️ OUTPUT PRACTICE (10M)</div><div class="task-desc" id="en_d3">...</div></div>
+            </label>
+        </div>
+        <button class="btn-main" id="en_btn" onclick="en_action()">CONFIRM (START 48H)</button>
+    </div>
+</div>
+
+<div id="view-gym" class="view-section">
+    <div class="app-container">
+        <div class="header"><h2>GYM STRATEGIC COMMAND</h2></div>
+        
+        <div class="mission-box">
+            <div class="mission-month" id="gy_month">...</div>
+            <div class="mission-week-content" id="gy_week">...</div>
+        </div>
+
+        <div class="warning-marquee" id="gy_warning"><div class="warning-text">YOU ARE A FAILURE - TIME IS UP - YOU ARE A FAILURE</div></div>
+        
+        <div class="countdown-box">
+            <div style="font-size: 0.75rem; color: #aaa; margin-bottom: 8px; font-weight: bold; text-transform: uppercase;">Recovery Window (48H)</div>
+            <div class="countdown-timer" id="gy_timer">48:00:00</div>
+        </div>
+        
+        <div class="progress-label"><span>Intensity (Session <span id="gy_lblDay">1</span>/3)</span> <span id="gy_lblEnergy">0%</span></div>
+        <div class="progress-bar-bg"><div class="progress-bar-fill" id="gy_barEnergy"></div></div>
+        
+        <div class="progress-label"><span>Monthly Progress (Week <span id="gy_lblWeek">1</span>/4)</span></div>
+        <div class="progress-bar-bg"><div class="progress-bar-fill" id="gy_barMonth"></div></div>
+
+        <div class="task-list" id="gy_task_container">
+            </div>
+        <button class="btn-main" id="gy_btn" onclick="gy_action()">ACTIVATE (48H)</button>
+    </div>
+</div>
+
+<div id="view-rules" class="view-section">
+    <div class="app-container" style="border-color: rgba(212,175,55,0.4); text-align: center;">
+        
+        <div class="rules-marquee">
+            <div class="rules-marquee-text">WELCOME BACK SIR, WISHING YOU ALL THE BEST!</div>
+        </div>
+
+        <h2 style="color:var(--gold); letter-spacing:4px; margin-bottom: 25px; border-bottom: 1px solid rgba(212,175,55,0.5); padding-bottom: 15px;">RULES PROTOCOL</h2>
+        
+        <div class="progress-label" style="color: var(--gold);"><span>TARGET SCORE: 1000</span> <span id="rules_lblEnergy">0%</span></div>
+        <div class="progress-bar-bg" style="border-color: rgba(212,175,55,0.5); margin-bottom: 30px;"><div class="progress-bar-fill" id="rules_barEnergy" style="background: var(--gold); box-shadow: 0 0 10px var(--gold);"></div></div>
+
+        <div class="slot-machine">
+            <div class="slot" id="s1">0</div>
+            <div class="slot" id="s2">0</div>
+            <div class="slot" id="s3">0</div>
+        </div>
+        
+        <div class="rules-stats">
+            <div class="rules-stat-card">
+                <div class="rules-stat-label">CURRENT COINS</div>
+                <div class="rules-stat-value" id="rules_coin">0</div>
+            </div>
+            <div class="rules-stat-card">
+                <div class="rules-stat-label">TOTAL POINTS (PTS)</div>
+                <div class="rules-stat-value" id="rules_point">0</div>
+            </div>
+        </div>
+        
+        <button class="btn-main ready" id="rules_btn" style="border-color:var(--gold); color:#000; background:var(--gold); padding: 25px; font-size: 1.2rem;" onclick="rules_spin()">EXECUTE SPIN (-1 COIN)</button>
+        
+        <div id="rules_main-display">
+            <div style="color:var(--gold); font-size:1.1rem; margin-bottom:15px; font-weight: bold; letter-spacing: 2px;">SYSTEM STATUS</div>
+            <div style="color:#fff; font-size:1.4rem; font-weight:bold;">READY FOR COMMANDS</div>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="confirmModal">
+    <div class="modal-content" id="confirmModalContent">
+        <h3 id="confirm_title">CONFIRMATION</h3>
+        <ul id="confirm_list"></ul>
+        <button class="btn-pass" id="confirm_btn" onclick="modalConfirm()">CONFIRM COMPLETION</button>
+    </div>
+</div>
+
+<div class="modal-overlay" id="alertModal" style="z-index: 3500;">
+    <div class="modal-content" style="border-color: var(--gold); box-shadow: 0 0 40px rgba(212,175,55,0.2);">
+        <h3 style="color: var(--gold); margin-top: 0; margin-bottom: 15px;">NOTIFICATION</h3>
+        <p id="alertMessage"></p>
+        <button class="btn-pass" style="border-color: var(--gold); color: var(--gold); margin-top: 10px;" onclick="closeCustomAlert()">CLOSE</button>
+    </div>
+</div>
+
+<script>
+    function enterFullscreen() {
+        let elem = document.documentElement;
+        if (elem.requestFullscreen) {
+            elem.requestFullscreen();
+        } else if (elem.webkitRequestFullscreen) {
+            elem.webkitRequestFullscreen();
+        } else if (elem.msRequestFullscreen) {
+            elem.msRequestFullscreen();
+        }
+        document.getElementById('init-overlay').style.display = 'none';
+    }
+
+    const data_blender = [
+        { m: 'MONTH 1: INITIALIZATION', t: ['Master 5 shortcuts (G,R,S,E,I)', 'Basic object modeling', 'Modifiers (Mirror/Array)', 'First image render'] },
+        { m: 'MONTH 2: DONUT CAMPAIGN', t: ['Donut Modeling & Sculpting', 'Master Shader Editor', 'Create sprinkles (Particle)', 'Animation & Video Export'] },
+        { m: 'MONTH 3: PORT ASSETS', t: ['Model Container', 'Basic RTG Crane framework', 'Rusted iron material (Texture)', 'HDRI Environment Setup'] },
+        { m: 'MONTH 4: VINFAST VF5', t: ['VF 5 Car Blocking', 'Wheel details, logo', 'Reflective car paint material', 'Set Camera & Car Animation'] },
+        { m: 'MONTH 5: ENVIRONMENT', t: ['Create orchard terrain', 'Geometry Nodes: Grass, leaves', 'Watering material', 'Fog & lighting effects'] },
+        { m: 'MONTH 6: CINEMATIC LIGHTING', t: ['Dramatic lighting', 'Smoke & fire VFX', 'Advanced Shading', 'Optimize Cycles vs Eevee'] },
+        { m: 'MONTH 7: CHARACTER DESIGN', t: ['Assassin Modeling', 'Create expressions (Shape Keys)', 'Clothing (Cloth Sim)', 'Mesh optimization (Retopology)'] },
+        { m: 'MONTH 8: RIGGING', t: ['Basic bone attachment', 'Weight Painting', 'IK/FK Control Panel', 'Weapon Rigging'] },
+        { m: 'MONTH 9: ANIMATION', t: ['12 Principles of Animation', 'Walk cycle animation', 'Combat action', 'Lip-sync (mouth matching)'] },
+        { m: 'MONTH 10: PRE-PRODUCTION', t: ['Write 30s script', 'Draw Storyboard on S23', 'Drafting (Blocking)', 'Recording & selecting music'] },
+        { m: 'MONTH 11: PRODUCTION', t: ['Finalize animation', 'Add muzzle flash effects', 'Fix clipping issues', 'Render full project'] },
+        { m: 'MONTH 12: POST-PRODUCTION', t: ['Editing (Blender VSE)', 'Color Grading', 'Voiceover & SFX', 'EXPORT FILM & SHARE'] }
+    ];
+
+    const data_english = [
+        { m: 'MONTH 1: SENSES', t: ['20 Vowels (IPA) + Pronouns', '24 Consonants (IPA) + Present Simple', 'Linking sounds + Continuous', 'Wh- questions formulation'] },
+        { m: 'MONTH 2: CONSONANTS', t: ['Stop consonants (/p, b, t, d, k, g/)', 'Fricative consonants (/s, z, h, l, m/)', 'Complex consonants (/th, sh, ch/)', 'Review 24 consonants & 150 words'] },
+        { m: 'MONTH 3: TIMELINE', t: ['Basic linking & Past To-be', 'Past Simple (Adding -ed)', 'Future (Will, Be going to)', 'Summarize 3 time milestones'] },
+        { m: 'MONTH 4: OBJECTS', t: ['Relative clause "Who"', 'Relative clause "Which/That"', 'Relative clause "Whose"', 'Write daily descriptive paragraph'] },
+        { m: 'MONTH 5: PASSIVE', t: ['Present Simple Passive', 'Past Simple Passive', 'Modal Verb Passive', 'Identify passive in news'] },
+        { m: 'MONTH 6: LOGIC', t: ['Conjunctions of reason (Because, So)', 'Conjunctions of contrast (Although)', 'Conjunctions of purpose, condition', 'Listen to Podcast with Eng subs'] },
+        { m: 'MONTH 7: SUBJUNCTIVE', t: ['Conditionals Type 0 & 1', 'Conditionals Type 2 & Idioms', 'Conditionals Type 3', 'Comprehensive review of If & Unless'] },
+        { m: 'MONTH 8: ACTION', t: ['Phrasal verbs with Get', 'Phrasal verbs with Take', 'Phrasal verbs Look, Go, Keep', 'Distinguish literal/figurative meaning'] },
+        { m: 'MONTH 9: FREEDOM', t: ['Watch sitcom without subs', 'Listen to Podcast without transcript', 'Watch TedTalks without subtitles', 'Record 2-minute English video'] },
+        { m: 'MONTH 10: EXPRESSION', t: ['Subjunctive "Wish"', 'Subjunctive "Suggest that"', 'Inversion "Never"', 'Inversion "Not only"'] },
+        { m: 'MONTH 11: SPEED', t: ['British Accent (BBC)', 'Australian & Indian Accents', 'Listen to YouTube at 1.25x / 1.5x', 'Listen to Podcast with background noise'] },
+        { m: 'MONTH 12: FINISH LINE', t: ['Review 1000 core vocabulary words', 'Write short English script', 'Self-debate a topic', '5-10 minute presentation'] }
+    ];
+
+    const data_gym = [
+        { m: 'MONTH 1: ADAPTATION', g: 'Acclimate to 40kg weight and proper form.' },
+        { m: 'MONTH 2: ENDURANCE', g: 'Increase reps and control breathing.' },
+        { m: 'MONTH 3: STRENGTH', g: 'Explosive power with Compound exercises (dumbbells/pull-ups).' },
+        { m: 'MONTH 4: BACK & LATS', g: 'Prioritize back thickness with Pull-ups and Rows.' },
+        { m: 'MONTH 5: CHEST', g: 'Floor Press and Push-up variations for definition.' },
+        { m: 'MONTH 6: LEGS', g: 'Push limits with Squats and Lunges.' },
+        { m: 'MONTH 7: SHOULDERS', g: 'Overhead press and Lateral Raises.' },
+        { m: 'MONTH 8: CORE', g: 'Planks and Leg Raises to protect the spine.' },
+        { m: 'MONTH 9: HYPERTROPHY', g: 'Slow eccentric (Tempo 3-1-1) to tear muscle fibers.' },
+        { m: 'MONTH 10: RESISTANCE BANDS', g: 'Integrate resistance bands for continuous tension.' },
+        { m: 'MONTH 11: DEFINITION', g: 'Focus on small muscle groups and striations.' },
+        { m: 'MONTH 12: PEAK', g: 'Maintain mass and test overall strength limits.' }
+    ];
+
+    function updateGlobalCoins() {
+        let coins = parseInt(localStorage.getItem('g_coins')) || 0;
+        let pts = parseInt(localStorage.getItem('rules_pts')) || 0;
+        
+        document.getElementById('nav-coin-count').innerText = coins;
+        document.getElementById('rules_coin').innerText = coins;
+        document.getElementById('rules_point').innerText = pts;
+        
+        let pct = Math.min((pts / 1000) * 100, 100).toFixed(1);
+        document.getElementById('rules_lblEnergy').innerText = pct + '%';
+        document.getElementById('rules_barEnergy').style.width = pct + '%';
+
+        let rBtn = document.getElementById('rules_btn');
+        if (coins <= 0) {
+            rBtn.disabled = true; rBtn.classList.remove('ready');
+            rBtn.style.background = 'transparent'; rBtn.style.color = 'var(--gold)';
+        } else {
+            rBtn.disabled = false; rBtn.classList.add('ready');
+            rBtn.style.background = 'var(--gold)'; rBtn.style.color = '#000';
+        }
+    }
+
+    function shootFireworks() {
+        let duration = 30 * 1000;
+        let animationEnd = Date.now() + duration;
+        let defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 9999, colors: ['#d4af37', '#ffd700', '#ffeb3b'] };
+
+        let interval = setInterval(function() {
+            let timeLeft = animationEnd - Date.now();
+            if (timeLeft <= 0) return clearInterval(interval);
+            let particleCount = 40 * (timeLeft / duration);
+            confetti(Object.assign({}, defaults, { particleCount, origin: { x: Math.random(), y: Math.random() - 0.2 } }));
+        }, 250);
+    }
+
+    function showCustomAlert(msg) {
+        document.getElementById('alertMessage').innerText = msg;
+        document.getElementById('alertModal').style.display = 'flex';
+    }
+    function closeCustomAlert() {
+        document.getElementById('alertModal').style.display = 'none';
+    }
+
+    function addReward(type) {
+        let coins = parseInt(localStorage.getItem('g_coins')) || 0;
+        let earned = (type === 'day') ? 1 : (type === 'week') ? 5 : 10;
+        localStorage.setItem('g_coins', coins + earned);
+        updateGlobalCoins();
+        showCustomAlert(`MISSION ACCOMPLISHED!\nYOU EARNED +${earned} COINS.`);
+    }
+
+    function goHome() {
+        if (window.location.hash) { history.back(); } 
+        else { switchView('view-home', false); }
+    }
+
+    function switchView(viewId, pushHistory = true) {
+        document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+        document.getElementById(viewId).classList.add('active');
+        document.getElementById('main-nav').style.display = (viewId === 'view-home') ? 'none' : 'flex';
+        window.scrollTo(0, 0); updateGlobalCoins();
+
+        if (pushHistory) {
+            try {
+                if (viewId === 'view-home') history.pushState({ view: viewId }, '', window.location.pathname);
+                else history.pushState({ view: viewId }, '', '#' + viewId.replace('view-', ''));
+            } catch(e) { console.log("History API not supported"); }
+        }
+    }
+
+    window.addEventListener('popstate', (event) => {
+        if (event.state && event.state.view) { switchView(event.state.view, false); } 
+        else { switchView('view-home', false); }
+    });
+
+    function triggerReset() {
+        if(prompt("Enter security code (8) for Factory Reset:") === "8") {
+            localStorage.clear(); alert("System restored to factory settings."); location.reload();
+        } else showCustomAlert("Incorrect password. Access denied.");
+    }
+
+    let pendingAction = null;
+    function showConfirmModal(title, listHTML, themeColor, callback) {
+        document.getElementById('confirm_title').innerText = title;
+        document.getElementById('confirm_title').style.color = themeColor;
+        document.getElementById('confirmModalContent').style.borderColor = themeColor;
+        document.getElementById('confirm_btn').style.borderColor = themeColor;
+        document.getElementById('confirm_btn').style.color = themeColor;
+        document.getElementById('confirm_list').innerHTML = listHTML;
+        
+        document.getElementById('confirm_btn').onmousedown = function() { this.style.background = themeColor; this.style.color = "#000"; }
+        document.getElementById('confirm_btn').onmouseup = function() { this.style.background = "rgba(0,0,0,0.5)"; this.style.color = themeColor; }
+        
+        pendingAction = callback;
+        document.getElementById('confirmModal').style.display = 'flex';
+    }
+    function modalConfirm() {
+        document.getElementById('confirmModal').style.display = 'none';
+        if(pendingAction) pendingAction();
+    }
+
+    let bl = { d: parseInt(localStorage.getItem('bl_d'))||1, w: parseInt(localStorage.getItem('bl_w'))||1, m: parseInt(localStorage.getItem('bl_m'))||1, run: localStorage.getItem('bl_run')==='true', end: parseInt(localStorage.getItem('bl_end'))||0 };
+    let en = { d: parseInt(localStorage.getItem('en_d'))||1, w: parseInt(localStorage.getItem('en_w'))||1, m: parseInt(localStorage.getItem('en_m'))||1, run: localStorage.getItem('en_run')==='true', end: parseInt(localStorage.getItem('en_end'))||0 };
+    let gy = { d: parseInt(localStorage.getItem('gy_d'))||1, w: parseInt(localStorage.getItem('gy_w'))||1, m: parseInt(localStorage.getItem('gy_m'))||1, run: localStorage.getItem('gy_run')==='true', end: parseInt(localStorage.getItem('gy_end'))||0 };
+
+    function bl_ui() {
+        let curM = data_blender[(bl.m-1) % 12]; let curT = curM.t[(bl.w-1) % 4];
+        document.getElementById('bl_month').innerText = curM.m; document.getElementById('bl_week').innerText = curT; document.getElementById('bl_lblDay').innerText = bl.d;
+        
+        if(bl.d <= 4) {
+            document.getElementById('bl_t1').innerText="🎧 S23 RESEARCH"; document.getElementById('bl_d1').innerText=`Watch guide: ${curT}`;
+            document.getElementById('bl_t2').innerText="✍️ NOTE-TAKING"; document.getElementById('bl_d2').innerText="Save important parameter notes.";
+        } else {
+            document.getElementById('bl_t1').innerText="💻 PC PRACTICE"; document.getElementById('bl_d1').innerText=`Practice: ${curT}`;
+            document.getElementById('bl_t2').innerText="🎨 PERSONAL PROJECT"; document.getElementById('bl_d2').innerText="Apply to assassin cinematic scene.";
+        }
+
+        let e = (document.getElementById('bl_chk1').checked?1:0) + (document.getElementById('bl_chk2').checked?1:0);
+        document.getElementById('bl_lblEnergy').innerText = (e/2*100)+'%'; document.getElementById('bl_barEnergy').style.width = (e/2*100)+'%';
+        document.getElementById('bl_barWeek').style.width = (bl.d/7*100)+'%';
+
+        let btn = document.getElementById('bl_btn');
+        if(!bl.run) {
+            btn.innerText="ACTIVATE CYCLE (48H)"; btn.className="btn-main ready";
+            [1,2].forEach(i=>{ document.getElementById('bl_item'+i).classList.add('disabled'); document.getElementById('bl_chk'+i).disabled = true; });
+        } else {
+            btn.innerText="CONFIRM COMPLETION";
+            if(Date.now() < bl.end) {
+                [1,2].forEach(i=>{ document.getElementById('bl_item'+i).classList.remove('disabled'); document.getElementById('bl_chk'+i).disabled = false; });
+            }
+            btn.className = (e===2) ? "btn-main ready" : "btn-main";
+        }
+    }
+    function bl_toggle() {
+        [1,2].forEach(i=>{ let chk=document.getElementById('bl_chk'+i); let item=document.getElementById('bl_item'+i); localStorage.setItem('bl_c'+i, chk.checked); if(chk.checked) item.classList.add('completed'); else item.classList.remove('completed'); });
+        bl_ui();
+    }
+    function bl_action() {
+        if(!bl.run) { bl.run=true; bl.end=Date.now()+(48*3600000); localStorage.setItem('bl_run','true'); localStorage.setItem('bl_end',bl.end); bl_ui(); }
+        else {
+            let e = (document.getElementById('bl_chk1').checked?1:0) + (document.getElementById('bl_chk2').checked?1:0);
+            if(e===2) { if(bl.d===7) showConfirmModal('BLENDER CHECK', '<li>Completed this week\'s exercises?</li><li>Product meets aesthetic standards?</li>', 'var(--theme-blender)', bl_next); else bl_next(); }
+        }
+    }
+    function bl_next() {
+        bl.run=false; localStorage.setItem('bl_run','false'); [1,2].forEach(i=>{ document.getElementById('bl_chk'+i).checked=false; document.getElementById('bl_item'+i).classList.remove('completed'); localStorage.setItem('bl_c'+i,'false'); });
+        addReward('day'); bl.d++;
+        if(bl.d>7){ bl.d=1; bl.w++; addReward('week'); }
+        if(bl.w>4){ bl.w=1; bl.m++; addReward('month'); }
+        localStorage.setItem('bl_d',bl.d); localStorage.setItem('bl_w',bl.w); localStorage.setItem('bl_m',bl.m); bl_ui();
+    }
+
+    function en_ui() {
+        let curM = data_english[(en.m-1) % 12]; let curT = curM.t[(en.w-1) % 4];
+        let topic = curT.includes('+') ? curT.split('+')[0].trim() : (curT.includes(':') ? curT.split(':')[1].trim() : curT);
+        
+        document.getElementById('en_month').innerText = curM.m; document.getElementById('en_week').innerText = curT; 
+        document.getElementById('en_lblDay').innerText = en.d; document.getElementById('en_lblWeek').innerText = en.w;
+        document.getElementById('en_d1').innerText = `Focus on intonation: ${topic}`;
+        
+        if(en.d<=5){
+            document.getElementById('en_t2').innerText="📖 ACTIVE LEARNING (20M)"; document.getElementById('en_d2').innerText=`Learn 5-7 vocab words & theory.`;
+            document.getElementById('en_t3').innerText="✍️ OUTPUT PRACTICE (10M)"; document.getElementById('en_d3').innerText="Write 3 applied English sentences.";
+        } else if(en.d===6) {
+            document.getElementById('en_t2').innerText="🔄 GENERAL REVIEW (20M)"; document.getElementById('en_d2').innerText="Review all vocabulary.";
+            document.getElementById('en_t3').innerText="🧹 ORGANIZE NOTES (10M)"; document.getElementById('en_d3').innerText="Re-read notes on S23 Ultra.";
+        } else {
+            document.getElementById('en_t2').innerText="🎯 TESTING STATION (20M)"; document.getElementById('en_d2').innerText="Prepare for weekend test.";
+            document.getElementById('en_t3').innerText="🎉 BRAIN RELAXATION (10M)"; document.getElementById('en_d3').innerText="Watch English video without subs.";
+        }
+
+        let e = 0; [1,2,3].forEach(i=>{ if(document.getElementById('en_chk'+i).checked) e++; });
+        document.getElementById('en_lblEnergy').innerText = Math.round(e/3*100)+'%'; document.getElementById('en_barEnergy').style.width = (e/3*100)+'%';
+        document.getElementById('en_barWeek').style.width = (en.d/7*100)+'%'; document.getElementById('en_barMonth').style.width = (en.w/4*100)+'%';
+
+        let btn = document.getElementById('en_btn');
+        if(!en.run) {
+            btn.innerText="ACTIVATE CYCLE (48H)"; btn.className="btn-main ready";
+            [1,2,3].forEach(i=>{ document.getElementById('en_item'+i).classList.add('disabled'); document.getElementById('en_chk'+i).disabled = true; });
+        } else {
+            btn.innerText="CONFIRM COMPLETION";
+            if(Date.now() < en.end) { [1,2,3].forEach(i=>{ document.getElementById('en_item'+i).classList.remove('disabled'); document.getElementById('en_chk'+i).disabled = false; }); }
+            btn.className = (e===3) ? "btn-main ready" : "btn-main";
+        }
+    }
+    function en_toggle() {
+        [1,2,3].forEach(i=>{ let chk=document.getElementById('en_chk'+i); let item=document.getElementById('en_item'+i); localStorage.setItem('en_c'+i, chk.checked); if(chk.checked) item.classList.add('completed'); else item.classList.remove('completed'); });
+        en_ui();
+    }
+    function en_action() {
+        if(!en.run) { en.run=true; en.end=Date.now()+(48*3600000); localStorage.setItem('en_run','true'); localStorage.setItem('en_end',en.end); en_ui(); }
+        else {
+            let e=0; [1,2,3].forEach(i=>{ if(document.getElementById('en_chk'+i).checked) e++;});
+            if(e===3){ if(en.d===7) showConfirmModal('ENGLISH CHECK', '<li>Memorized 35 words this week?</li><li>Wrote 10 grammatically correct sentences?</li>', 'var(--theme-english)', en_next); else en_next(); }
+        }
+    }
+    function en_next() {
+        en.run=false; localStorage.setItem('en_run','false'); [1,2,3].forEach(i=>{ document.getElementById('en_chk'+i).checked=false; document.getElementById('en_item'+i).classList.remove('completed'); localStorage.setItem('en_c'+i,'false'); });
+        addReward('day'); en.d++;
+        if(en.d>7){ en.d=1; en.w++; addReward('week'); }
+        if(en.w>4){ en.w=1; en.m++; addReward('month'); }
+        localStorage.setItem('en_d',en.d); localStorage.setItem('en_w',en.w); localStorage.setItem('en_m',en.m); en_ui();
+    }
+
+    function gy_ui() {
+        let curM = data_gym[(gy.m-1) % 12];
+        document.getElementById('gy_month').innerText = `${curM.m} - WEEK ${gy.w}`; document.getElementById('gy_week').innerText = curM.g;
+        document.getElementById('gy_lblDay').innerText = gy.d; document.getElementById('gy_lblWeek').innerText = gy.w;
+        
+        const ct = document.getElementById('gy_task_container'); ct.innerHTML = '';
+        let tArr = (gy.d===1) ? [{t:"GOBLET SQUAT (40KG)",d:"Dumbbells. 3x10-12"}, {t:"PULL-UPS",d:"Max reps. 3 sets."}, {t:"DUMBBELL FLOOR PRESS",d:"40kg weight. 3x10 reps."}] : [{t:(gy.d===2?"BULGARIAN SPLIT SQUAT":"WALKING LUNGES"),d:"Bodyweight. Pump leg muscles."}, {t:(gy.d===2?"DIAMOND PUSH-UPS":"PIKE PUSH-UPS"),d:"Focus Triceps / Shoulders."}, {t:(gy.d===2?"PLANK":"LEG RAISES"),d:"Engage core, protect spine."}];
+        
+        let e=0;
+        tArr.forEach((t,i)=>{
+            let isC = localStorage.getItem('gy_c'+i)==='true'; if(isC) e++;
+            ct.innerHTML += `<label class="task-item ${isC?'completed':''} ${!gy.run?'disabled':''}"><input type="checkbox" id="gy_chk${i}" ${isC?'checked':''} onchange="gy_toggle(${i})" ${!gy.run?'disabled':''}><div><div class="task-title">${t.t}</div><div class="task-desc">${t.d}</div></div></label>`;
+        });
+        
+        document.getElementById('gy_lblEnergy').innerText = Math.round(e/3*100)+'%'; document.getElementById('gy_barEnergy').style.width = (e/3*100)+'%';
+        document.getElementById('gy_barMonth').style.width = (gy.w/4*100)+'%';
+        
+        let btn = document.getElementById('gy_btn');
+        if(!gy.run) { btn.innerText="START WORKOUT"; btn.className="btn-main ready"; }
+        else { btn.innerText="CONFIRM COMPLETION"; btn.className = (e===3)?"btn-main ready":"btn-main"; }
+    }
+    function gy_toggle(i) { localStorage.setItem('gy_c'+i, document.getElementById('gy_chk'+i).checked); gy_ui(); }
+    function gy_action() {
+        if(!gy.run){ gy.run=true; gy.end=Date.now()+(48*3600000); localStorage.setItem('gy_run','true'); localStorage.setItem('gy_end',gy.end); gy_ui(); }
+        else {
+            let e=0; [0,1,2].forEach(i=>{ if(document.getElementById('gy_chk'+i).checked) e++; });
+            if(e===3) showConfirmModal('GYM CHECK', '<li>Muscles fully stimulated?</li><li>Ready for 48H nutritional recovery?</li>', 'var(--theme-gym)', gy_next);
+        }
+    }
+    function gy_next() {
+        gy.run=false; localStorage.setItem('gy_run','false'); [0,1,2].forEach(i=>{ localStorage.setItem('gy_c'+i,'false'); });
+        addReward('day'); gy.d++;
+        if(gy.d>3){ gy.d=1; gy.w++; addReward('week'); }
+        if(gy.w>4){ gy.w=1; gy.m++; addReward('month'); }
+        localStorage.setItem('gy_d',gy.d); localStorage.setItem('gy_w',gy.w); localStorage.setItem('gy_m',gy.m); gy_ui();
+    }
+
+    function rules_spin() {
+        let coins = parseInt(localStorage.getItem('g_coins'))||0; if(coins<=0) return;
+        localStorage.setItem('g_coins', --coins); updateGlobalCoins();
+        document.getElementById('rules_btn').disabled = true;
+        document.getElementById('rules_btn').classList.remove('ready');
+        document.getElementById('rules_main-display').innerHTML = `<div style="color:var(--gold); font-weight:bold; margin-bottom:10px;">SYSTEM STATUS</div><div style="color:#fff; font-size:1.3rem; animation:move 1s infinite alternate;">EXECUTING SPIN...</div>`;
+        
+        let i1=setInterval(()=>document.getElementById('s1').innerText=Math.floor(Math.random()*10),70);
+        let i2=setInterval(()=>document.getElementById('s2').innerText=Math.floor(Math.random()*10),70);
+        let i3=setInterval(()=>document.getElementById('s3').innerText=Math.floor(Math.random()*10),70);
+        
+        setTimeout(()=>clearInterval(i1), 1500); setTimeout(()=>clearInterval(i2), 3000);
+        setTimeout(()=>{
+            clearInterval(i3);
+            let r = [document.getElementById('s1').innerText, document.getElementById('s2').innerText, document.getElementById('s3').innerText].join('');
+            let pt=0, txt="", cat="ACTIVATION REWARD";
+            
+            if(['012','123','345','456','789'].includes(r)){ 
+                pt=100; cat="JACKPOT!"; txt="+100 PTS"; shootFireworks();
+            }
+            else if(r[0] === r[1] && r[1] === r[2]){ 
+                pt=50; cat="TRIPLE MATCH!"; txt="+50 PTS";
+            }
+            else if(r[0] === r[2] && r[0] !== r[1]){ 
+                pt=20; cat="NICE PATTERN!"; txt="+20 PTS";
+            }
+            else {
+                let rand = Math.random();
+                if(rand < (395 / 895)) {
+                    pt=10; cat="LUCKY SPIN!"; txt="+10 PTS";
+                } else {
+                    if(Math.random()<0.5){ 
+                        cat="PHYSICAL CHALLENGE"; 
+                        txt=["15 PUSH-UPS", "20 SQUATS", "30 SEC PLANK", "10 BURPEES"][Math.floor(Math.random()*4)];
+                    } else { 
+                        cat="FREE ENTERTAINMENT"; 
+                        txt=["LISTEN TO 1 FAVORITE SONG", "30 MINS SCREEN TIME", "20 MINS SCREEN TIME", "10 MINS SCREEN TIME"][Math.floor(Math.random()*4)];
+                    }
+                }
+            }
+            
+            let currentPts = parseInt(localStorage.getItem('rules_pts'))||0;
+            let total = currentPts + pt; 
+            localStorage.setItem('rules_pts', total);
+            
+            if (total >= 1000 && currentPts < 1000) { shootFireworks(); }
+            
+            document.getElementById('rules_main-display').innerHTML = `<div style="color:var(--gold); font-weight:bold; margin-bottom:15px; letter-spacing:1px;">${cat}</div><div style="color:#fff; font-size:1.3rem; font-weight:bold;">${txt}</div>`;
+            updateGlobalCoins(); 
+        }, 4500); 
+    }
+
+    setInterval(() => {
+        let now = Date.now();
+        
+        if(bl.run) {
+            let df = bl.end - now; let t = document.getElementById('bl_timer');
+            if(df>0) { 
+                let h=Math.floor(df/3600000), m=Math.floor((df%3600000)/60000), s=Math.floor((df%60000)/1000); 
+                t.innerText=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; 
+                document.getElementById('bl_warning').style.display='none'; 
+            } else { 
+                t.innerText="OVERDUE"; t.style.color="#ff0000"; 
+                document.getElementById('bl_warning').style.display='block'; 
+                [1,2].forEach(i=>{document.getElementById('bl_item'+i).classList.add('disabled'); document.getElementById('bl_chk'+i).disabled=true;});
+            }
+        }
+        
+        if(en.run) {
+            let df = en.end - now; let t = document.getElementById('en_timer');
+            if(df>0) { 
+                let h=Math.floor(df/3600000), m=Math.floor((df%3600000)/60000), s=Math.floor((df%60000)/1000); 
+                t.innerText=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; 
+                document.getElementById('en_warning').style.display='none'; 
+            } else { 
+                t.innerText="OVERDUE"; t.style.color="#ff0000"; 
+                document.getElementById('en_warning').style.display='block'; 
+                [1,2,3].forEach(i=>{document.getElementById('en_item'+i).classList.add('disabled'); document.getElementById('en_chk'+i).disabled=true;});
+            }
+        }
+        
+        if(gy.run) {
+            let df = gy.end - now; let t = document.getElementById('gy_timer');
+            if(df>0) { 
+                let h=Math.floor(df/3600000), m=Math.floor((df%3600000)/60000), s=Math.floor((df%60000)/1000); 
+                t.innerText=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; 
+                document.getElementById('gy_warning').style.display='none'; 
+            } else { 
+                t.innerText="OVERDUE"; t.style.color="#ff0000"; 
+                document.getElementById('gy_warning').style.display='block';
+                [0,1,2].forEach(i=>{ 
+                    let item = document.getElementById('gy_chk'+i);
+                    if (item) { item.disabled=true; item.parentElement.classList.add('disabled'); }
+                });
+            }
+        }
+    }, 1000);
+
+    window.onload = () => {
+        try {
+            if (!history.state) { history.replaceState({ view: 'view-home' }, '', window.location.pathname); } 
+            else { switchView(history.state.view, false); }
+        } catch(e) { console.log("History API not supported"); }
+        
+        updateGlobalCoins();
+        
+        [1,2].forEach(i=>{ if(localStorage.getItem('bl_c'+i)==='true') document.getElementById('bl_chk'+i).checked = true; });
+        [1,2,3].forEach(i=>{ if(localStorage.getItem('en_c'+i)==='true') document.getElementById('en_chk'+i).checked = true; });
+        
+        bl_ui(); en_ui(); gy_ui();
+    };
+</script>
+</body>
+</html>
